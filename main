@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+(
+    for x in "$WD/src"/*.hs; do
+        (
+            hlint "$x"
+            ormolu -m inplace "$x"
+        ) &
+    done
+    for _ in $(jobs -p); do
+        wait -n
+    done
+)
+(
+    flags=(
+        -dynamic
+        "-fdiagnostics-color=always"
+        -funbox-strict-fields
+        "-i$WD/src"
+        "-optl -fuse-ld=lld"
+        "-outputdir $WD/build"
+        -Wall
+        -Wcompat
+        -Werror
+        -Widentities
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wmissing-export-lists
+        -Wmonomorphism-restriction
+        -Wno-unused-top-binds
+        -Wpartial-fields
+        -Wredundant-constraints
+        -Wunused-packages
+        -Wunused-type-patterns
+    )
+    ghc "${flags[@]}" -o "$WD/bin/main" "$WD/src/Main.hs"
+    "$WD/bin/main" "$WD/examples/sketch.bla"
+)

@@ -1,0 +1,15 @@
+*
+!.gitignore
+!*.nix
+!.shellhook
+
+!vim/
+!*.vim
+
+!src/
+!*.hs
+
+!examples/
+!*.bla
+
+!main
