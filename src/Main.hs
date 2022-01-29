@@ -5,7 +5,7 @@ import Data.Bifunctor (first)
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 import Data.List (nub)
 import Data.Maybe (fromMaybe)
-import System.Environment (getArgs)
+import System.Environment (getArgs, getExecutablePath)
 import Text.Printf (printf)
 
 data UnOp
@@ -267,31 +267,31 @@ intoFunc (AstPreFunc pos name args body) =
   where
     locals = nub $ collectAssigns body
 
+parse :: Source -> Either (String, Pos) [AstPreFunc]
+parse source =
+  either
+    (Left . (,) "parse" . snd)
+    (Right . snd . snd)
+    $ first (fmap (fromMaybe $ length source)) $ runParser program source
+
+preCompile :: [AstPreFunc] -> Either (String, Pos) [AstFunc]
+preCompile = either (Left . (,) "pre-compile") Right . mapM intoFunc
+
 findLine :: Source -> Pos -> Int
 findLine source pos =
   1 + length (filter id $ take (length source - pos) $ map (== '\n') source)
 
-getError :: FilePath -> Source -> String -> Pos -> String
-getError path source message pos =
-  printf "%s:%d | %s error\n" path (findLine source pos) message
-
-parse :: FilePath -> Source -> Either String [AstPreFunc]
-parse path source =
-  either
-    (Left . getError path source "parse" . snd)
-    (Right . snd . snd)
-    $ first (fmap (fromMaybe $ length source)) $ runParser program source
-
-preCompile :: FilePath -> Source -> [AstPreFunc] -> Either String [AstFunc]
-preCompile path source =
-  either (Left . getError path source "pre-compile") Right . mapM intoFunc
-
 main :: IO ()
 main = do
-  [path] <- getArgs
-  source <- readFile path
-  putStr $
-    either
-      id
-      (unlines . map show)
-      (parse path source >>= preCompile path source)
+  args <- getArgs
+  case args of
+    [path] -> do
+      source <- readFile path
+      putStr $
+        either
+          ( \(error', pos) ->
+              printf "%s:%d | %s error\n" path (findLine source pos) error'
+          )
+          (unlines . map show)
+          (parse source >>= preCompile)
+    _ -> getExecutablePath >>= putStrLn . printf "%s path/to/script.bla"
