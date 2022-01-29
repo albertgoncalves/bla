@@ -262,10 +262,9 @@ intoFunc (AstPreFunc pos name args body) =
   case popLast body of
     Nothing -> Left pos
     Just (body', AstStmtRet _ returnExpr) ->
-      Right $ AstFunc pos name args locals body' returnExpr
+      Right $
+        AstFunc pos name args (nub $ collectAssigns body) body' returnExpr
     Just (_, x) -> Left $ getStmtPos x
-  where
-    locals = nub $ collectAssigns body
 
 parse :: Source -> Either (String, Pos) [AstPreFunc]
 parse source =
