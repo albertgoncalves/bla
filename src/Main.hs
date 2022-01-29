@@ -293,4 +293,4 @@ main = do
           )
           (unlines . map show)
           (parse source >>= preCompile)
-    _ -> getExecutablePath >>= putStrLn . printf "%s path/to/script.bla"
+    _ -> getExecutablePath >>= putStrLn . printf "$ %s path/to/script.bla"
