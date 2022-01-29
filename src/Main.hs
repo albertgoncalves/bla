@@ -1,7 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
 import Control.Applicative (Alternative (..))
+import Data.Bifunctor (first)
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
+import Data.List (nub)
 import Data.Maybe (fromMaybe)
 import System.Environment (getArgs)
 import Text.Printf (printf)
@@ -46,10 +48,22 @@ data AstPreFunc = AstPreFunc
   }
   deriving (Show)
 
+data AstFunc = AstFunc
+  { getAstFuncPos :: Pos,
+    getAstFuncName :: String,
+    getAstFuncArgs :: [String],
+    getAstFuncLocals :: [String],
+    getAstFuncAst :: [AstStmt],
+    getAstFuncRet :: AstExpr
+  }
+  deriving (Show)
+
+type Source = String
+
 -- NOTE: See `https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf`.
 -- NOTE: See `https://serokell.io/blog/parser-combinators-in-haskell`.
 newtype Parser a = Parser
-  { runParser :: String -> Either (Bool, Maybe Int) (Bool, (String, a))
+  { runParser :: Source -> Either (Bool, Maybe Pos) (Bool, (Source, a))
   }
 
 instance Functor Parser where
@@ -107,7 +121,7 @@ satisfy f = Parser $ \case
       then Right (True, (xs, x))
       else Left (False, Just $ length xs + 1)
 
-position :: Parser Int
+position :: Parser Pos
 position = Parser $ \input -> Right (False, (input, length input))
 
 char :: Char -> Parser Char
@@ -222,22 +236,62 @@ func =
 program :: Parser [AstPreFunc]
 program = space *> some func <* end
 
-findLine :: Int -> String -> Int
-findLine n = length . filter id . take n . map (== '\n')
+popLast :: [a] -> Maybe ([a], a)
+popLast xs =
+  case reverse xs of
+    [] -> Nothing
+    (x : xs') -> Just (reverse xs', x)
+
+getStmtPos :: AstStmt -> Pos
+getStmtPos (AstStmtAssign pos _ _) = pos
+getStmtPos (AstStmtIf pos _ _) = pos
+getStmtPos (AstStmtLoop pos _) = pos
+getStmtPos (AstStmtBreak pos _) = pos
+getStmtPos (AstStmtCont pos _) = pos
+getStmtPos (AstStmtRet pos _) = pos
+
+collectAssigns :: [AstStmt] -> [String]
+collectAssigns [] = []
+collectAssigns ((AstStmtAssign _ x _) : xs) = x : collectAssigns xs
+collectAssigns ((AstStmtIf _ _ xs0) : xs1) = collectAssigns $ xs0 ++ xs1
+collectAssigns ((AstStmtLoop _ xs0) : xs1) = collectAssigns $ xs0 ++ xs1
+collectAssigns (_ : xs) = collectAssigns xs
+
+intoFunc :: AstPreFunc -> Either Pos AstFunc
+intoFunc (AstPreFunc pos name args body) =
+  case popLast body of
+    Nothing -> Left pos
+    Just (body', AstStmtRet _ returnExpr) ->
+      Right $ AstFunc pos name args locals body' returnExpr
+    Just (_, x) -> Left $ getStmtPos x
+  where
+    locals = nub $ collectAssigns body
+
+findLine :: Source -> Pos -> Int
+findLine source pos =
+  1 + length (filter id $ take (length source - pos) $ map (== '\n') source)
+
+getError :: FilePath -> Source -> String -> Pos -> String
+getError path source message pos =
+  printf "%s:%d | %s error\n" path (findLine source pos) message
+
+parse :: FilePath -> Source -> Either String [AstPreFunc]
+parse path source =
+  either
+    (Left . getError path source "parse" . snd)
+    (Right . snd . snd)
+    $ first (fmap (fromMaybe $ length source)) $ runParser program source
+
+preCompile :: FilePath -> Source -> [AstPreFunc] -> Either String [AstFunc]
+preCompile path source =
+  either (Left . getError path source "pre-compile") Right . mapM intoFunc
 
 main :: IO ()
 main = do
   [path] <- getArgs
   source <- readFile path
-  let n = length source
   putStr $
     either
-      ( printf "%s:%d | Parse Error\n" path
-          . (1 +)
-          . (`findLine` source)
-          . (n -)
-          . fromMaybe n
-          . snd
-      )
-      (unlines . map show . snd . snd)
-      $ runParser program source
+      id
+      (unlines . map show)
+      (parse path source >>= preCompile path source)
