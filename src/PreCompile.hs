@@ -9,29 +9,28 @@ popLast xs =
     [] -> Nothing
     (x : xs') -> Just (reverse xs', x)
 
-getStmtPos :: AstStmt -> Pos
-getStmtPos (AstStmtAssign pos _ _) = pos
-getStmtPos (AstStmtIf pos _ _) = pos
-getStmtPos (AstStmtLoop pos _) = pos
-getStmtPos (AstStmtBreak pos _) = pos
-getStmtPos (AstStmtCont pos _) = pos
-getStmtPos (AstStmtRet pos _) = pos
+getPos :: AstStmt -> Pos
+getPos (AstStmtAssign pos _ _) = pos
+getPos (AstStmtIf pos _ _) = pos
+getPos (AstStmtLoop pos _) = pos
+getPos (AstStmtBreak pos _) = pos
+getPos (AstStmtCont pos _) = pos
+getPos (AstStmtRet pos _) = pos
 
-collectAssigns :: [AstStmt] -> [String]
-collectAssigns [] = []
-collectAssigns ((AstStmtAssign _ x _) : xs) = x : collectAssigns xs
-collectAssigns ((AstStmtIf _ _ xs0) : xs1) = collectAssigns $ xs0 ++ xs1
-collectAssigns ((AstStmtLoop _ xs0) : xs1) = collectAssigns $ xs0 ++ xs1
-collectAssigns (_ : xs) = collectAssigns xs
+getAssigns :: [AstStmt] -> [String]
+getAssigns [] = []
+getAssigns ((AstStmtAssign _ x _) : xs) = x : getAssigns xs
+getAssigns ((AstStmtIf _ _ xs0) : xs1) = getAssigns $ xs0 ++ xs1
+getAssigns ((AstStmtLoop _ xs0) : xs1) = getAssigns $ xs0 ++ xs1
+getAssigns (_ : xs) = getAssigns xs
 
 intoFunc :: AstPreFunc -> Either Pos AstFunc
 intoFunc (AstPreFunc pos name args body) =
   case popLast body of
     Nothing -> Left pos
     Just (body', AstStmtRet _ returnExpr) ->
-      Right $
-        AstFunc pos name args (nub $ collectAssigns body) body' returnExpr
-    Just (_, x) -> Left $ getStmtPos x
+      Right $ AstFunc pos name args (nub $ getAssigns body) body' returnExpr
+    Just (_, x) -> Left $ getPos x
 
 preCompile :: [AstPreFunc] -> Either (String, Pos) [AstFunc]
 preCompile = either (Left . (,) "pre-compile") Right . mapM intoFunc

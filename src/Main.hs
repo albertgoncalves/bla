@@ -1,14 +1,22 @@
 module Main where
 
 import Ast (Pos)
+import Data.Tuple (swap)
 import Parse (Source, parse)
 import PreCompile (preCompile)
 import System.Environment (getArgs, getExecutablePath)
 import Text.Printf (printf)
 
-findLine :: Source -> Pos -> Int
-findLine source pos =
-  1 + length (filter id $ take (length source - pos) $ map (== '\n') source)
+getRowCol :: Source -> Pos -> (Int, Int)
+getRowCol source pos =
+  ( 1 + length (filter (== '\n') xs),
+    1 + length (takeWhile (/= '\n') $ reverse xs)
+  )
+  where
+    xs = take (length source - pos) source
+
+showError :: FilePath -> Source -> Pos -> String -> String
+showError path = (uncurry (printf "%s:%d:%d: %s error\n" path) .) . getRowCol
 
 main :: IO ()
 main = do
@@ -18,9 +26,7 @@ main = do
       source <- readFile path
       putStr $
         either
-          ( \(error', pos) ->
-              printf "%s:%d | %s error\n" path (findLine source pos) error'
-          )
+          (uncurry (showError path source) . swap)
           (unlines . map show)
           (parse source >>= preCompile)
     _ -> getExecutablePath >>= putStrLn . printf "$ %s path/to/script.bla"

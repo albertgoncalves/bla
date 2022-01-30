@@ -59,11 +59,8 @@ instance Alternative Parser where
           _ -> l1
       Left (False, _) -> p1 input
 
-sepBy1 :: Parser b -> Parser c -> Parser [b]
-sepBy1 p0 p1 = (:) <$> p0 <*> many (p1 *> p0)
-
 sepBy :: Parser b -> Parser c -> Parser [b]
-sepBy p0 p1 = sepBy1 p0 p1 <|> pure []
+sepBy p0 p1 = ((:) <$> p0 <*> many (p1 *> p0)) <|> pure []
 
 end :: Parser ()
 end = Parser $ \case
@@ -111,9 +108,6 @@ semicolon = () <$ token (char ';')
 comma :: Parser ()
 comma = () <$ token (char ',')
 
-list :: Parser a -> Parser [a]
-list p = sepBy p comma
-
 digits :: Parser String
 digits = token $ some $ satisfy isDigit
 
@@ -147,7 +141,7 @@ binOp =
     f (op, p) = AstExprBinOp <$> position <*> expr <*> (op <$ p) <*> expr
 
 call :: Parser AstExpr
-call = AstExprCall <$> position <*> ident <*> parens (list expr)
+call = AstExprCall <$> position <*> ident <*> parens (sepBy expr comma)
 
 expr :: Parser AstExpr
 expr =
