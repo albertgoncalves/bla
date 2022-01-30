@@ -27,7 +27,6 @@ set -euo pipefail
         -Widentities
         -Wincomplete-record-updates
         -Wincomplete-uni-patterns
-        -Wmissing-export-lists
         -Wmonomorphism-restriction
         -Wno-unused-top-binds
         -Wpartial-fields
