@@ -20,6 +20,10 @@ showError :: FilePath -> Source -> Pos -> String -> String
 showError path =
   (uncurry (printf "  %s:%d:%d [ %s error ]" path) .) . getRowCol
 
+validate :: [a] -> [a]
+validate xs@[_] = xs
+validate _ = undefined
+
 main :: IO ()
 main = do
   args <- getArgs
@@ -29,6 +33,6 @@ main = do
       putStrLn $
         either
           (uncurry (showError path source) . swap)
-          (show . getNodeInt . head . run . assemble . compile)
+          (show . getNodeInt . head . validate . run . assemble . compile)
           (parse source >>= preCompile)
     _ -> getExecutablePath >>= putStrLn . printf "$ %s path/to/script.bla"
