@@ -1,0 +1,28 @@
+f1() {
+    # ...
+    return 12345;
+    # ...
+}
+
+main() {
+    i = 0;
+    loop {
+        loop {
+            if (i == 10) {
+                x = f0();
+                # break 1;
+                break ;
+            }
+            x = 2;
+            i = (i + 1);
+        }
+        x = 3;
+    }
+    return x;
+}
+
+f0() {
+    # ...
+    return f1();
+    # ...
+}

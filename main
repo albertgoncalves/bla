@@ -35,5 +35,8 @@ set -euo pipefail
         -Wunused-type-patterns
     )
     ghc "${flags[@]}" -o "$WD/bin/main" "$WD/src/Main.hs"
-    "$WD/bin/main" "$WD/examples/sketch.bla"
+    "$WD/bin/main" "$WD/examples/parse_error.bla"
+    "$WD/bin/main" "$WD/examples/pre_compile_error.bla"
+    "$WD/bin/main" "$WD/examples/fib_loop.bla"
+    "$WD/bin/main" "$WD/examples/fib_rec.bla"
 )
