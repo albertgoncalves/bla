@@ -13,8 +13,6 @@ syn match Function  "[A-Za-z][A-Za-z0-9_]*("me=e-1
 
 syn keyword Conditional
     \ if
-syn keyword Keyword
-    \ print
 syn keyword Repeat
     \ loop
 syn keyword Statement
