@@ -1,12 +1,13 @@
 module Main where
 
 import Ast (Pos)
-import Compile (assemble, compile, getNodeInt, run)
+import Compile (assemble, compile)
 import Data.Tuple (swap)
 import Parse (Source, parse)
 import PreCompile (preCompile)
 import System.Environment (getArgs, getExecutablePath)
 import Text.Printf (printf)
+import Vm (Node (..), run)
 
 getRowCol :: Source -> Pos -> (Int, Int)
 getRowCol source pos =
