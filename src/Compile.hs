@@ -175,6 +175,9 @@ compileStmt context (AstStmtCont _ n) =
   appendContextInsts context [PreInstLabelPush labelCont, InstJump]
   where
     (LabelLoop labelCont _) = findLabelLoop context n
+compileStmt context (AstStmtDiscard _ expr) =
+  decrStackOffset $
+    appendContextInsts (compileExpr context expr) [InstDrop, InstLitInt 1]
 
 appendCompilerInsts :: Compiler -> [Inst] -> Compiler
 appendCompilerInsts (Compiler labelCount insts0) insts1 =

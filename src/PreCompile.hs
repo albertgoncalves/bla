@@ -16,6 +16,7 @@ getPos (AstStmtLoop pos _) = pos
 getPos (AstStmtBreak pos _) = pos
 getPos (AstStmtCont pos _) = pos
 getPos (AstStmtRet pos _) = pos
+getPos (AstStmtDiscard pos _) = pos
 
 getAssigns :: [AstStmt] -> [String]
 getAssigns [] = []

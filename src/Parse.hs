@@ -170,7 +170,10 @@ statement =
       AstStmtRet
         <$> position <*> (token (string "return") *> expr <* semicolon),
       AstStmtAssign
-        <$> position <*> (ident <* token (char '=')) <*> (expr <* semicolon)
+        <$> position <*> (ident <* token (char '=')) <*> (expr <* semicolon),
+      AstStmtDiscard
+        <$> position
+        <*> (token (char '_') *> token (char '=') *> expr <* semicolon)
     ]
 
 statements :: Parser [AstStmt]
