@@ -69,17 +69,14 @@ pushLabelLoop
       (Labels labelRet $ x : labelLoops)
       compiler
 
-popLabelLoop :: Context -> Int -> (LabelLoop, Context)
-popLabelLoop
-  (Context stackOffset vars (Labels labelRet (x : labelLoops)) compiler)
-  n
-    | n == 0 = (x, context)
-    | n < 0 = undefined
-    | otherwise = popLabelLoop context (n - 1)
-    where
-      context =
-        Context stackOffset vars (Labels labelRet labelLoops) compiler
-popLabelLoop _ _ = undefined
+findLabelLoop :: Context -> Int -> LabelLoop
+findLabelLoop (Context _ _ (Labels _ labelLoops) _) = (labelLoops !!)
+
+dropLabelLoop :: Context -> Context
+dropLabelLoop
+  (Context stackOffset vars (Labels labelRet (_ : labelLoops)) compiler) =
+    Context stackOffset vars (Labels labelRet labelLoops) compiler
+dropLabelLoop _ = undefined
 
 getVarOffset :: Context -> String -> Int
 getVarOffset context name =
@@ -154,13 +151,14 @@ compileStmt context (AstStmtRet _ expr) =
         InstJump
       ]
 compileStmt context0 (AstStmtLoop _ body) =
-  appendContextInsts
-    ( foldl'
-        compileStmt
-        (appendContextInsts context2 [PreInstLabelSet labelCont])
-        body
-    )
-    [PreInstLabelPush labelCont, InstJump, PreInstLabelSet labelBreak]
+  dropLabelLoop $
+    appendContextInsts
+      ( foldl'
+          compileStmt
+          (appendContextInsts context2 [PreInstLabelSet labelCont])
+          body
+      )
+      [PreInstLabelPush labelCont, InstJump, PreInstLabelSet labelBreak]
   where
     context1 = incrLabelCount context0
     context2 =
@@ -169,14 +167,14 @@ compileStmt context0 (AstStmtLoop _ body) =
           LabelLoop labelCont labelBreak
     labelCont = makeLabel context0 ++ "_continue"
     labelBreak = makeLabel context1 ++ "_break"
-compileStmt context0 (AstStmtBreak _ n) =
-  appendContextInsts context1 [PreInstLabelPush labelBreak, InstJump]
+compileStmt context (AstStmtBreak _ n) =
+  appendContextInsts context [PreInstLabelPush labelBreak, InstJump]
   where
-    (LabelLoop _ labelBreak, context1) = popLabelLoop context0 n
-compileStmt context0 (AstStmtCont _ n) =
-  appendContextInsts context1 [PreInstLabelPush labelCont, InstJump]
+    (LabelLoop _ labelBreak) = findLabelLoop context n
+compileStmt context (AstStmtCont _ n) =
+  appendContextInsts context [PreInstLabelPush labelCont, InstJump]
   where
-    (LabelLoop labelCont _, context1) = popLabelLoop context0 n
+    (LabelLoop labelCont _) = findLabelLoop context n
 
 appendCompilerInsts :: Compiler -> [Inst] -> Compiler
 appendCompilerInsts (Compiler labelCount insts0) insts1 =
