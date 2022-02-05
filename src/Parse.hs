@@ -174,7 +174,8 @@ statement =
         <$> position <*> (ident <* token (char '=')) <*> (expr <* semicolon),
       AstStmtDiscard
         <$> position
-        <*> (token (char '_') *> token (char '=') *> expr <* semicolon)
+        <*> (token (char '_') *> token (char '=') *> expr <* semicolon),
+      AstStmtEffect <$> position <*> (parens expr <* semicolon)
     ]
 
 statements :: Parser [AstStmt]

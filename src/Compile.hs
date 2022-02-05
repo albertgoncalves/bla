@@ -185,6 +185,8 @@ compileStmt context (AstStmtCont _ n) =
 compileStmt context (AstStmtDiscard _ expr) =
   decrStackOffset $
     appendContextInsts (compileExpr context expr) [InstDrop, InstLitInt 1]
+compileStmt context (AstStmtEffect _ expr) =
+  decrStackOffset $ compileExpr context expr
 
 appendCompilerInsts :: Compiler -> [Inst] -> Compiler
 appendCompilerInsts (Compiler labelCount insts0) insts1 =

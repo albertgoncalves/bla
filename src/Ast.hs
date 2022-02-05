@@ -28,6 +28,7 @@ data AstStmt
   | AstStmtCont Pos Int
   | AstStmtRet Pos (Maybe AstExpr)
   | AstStmtDiscard Pos AstExpr
+  | AstStmtEffect Pos AstExpr
 
 data AstPreFunc = AstPreFunc
   { getAstPreFuncPos :: Pos,
