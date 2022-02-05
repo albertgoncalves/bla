@@ -1,0 +1,38 @@
+f0(x, y) {
+    loop {
+        if (x == 0) {
+            loop {
+                (f0((x - 1), y));
+                if (x == 0) {
+                    return;
+                }
+            }
+        }
+        break 0;
+    }
+    return;
+}
+
+f1() {
+    loop {
+        x = 0;
+        if (x == 0) {
+            loop {
+                if (x == 1) {
+                    (f1());
+                }
+                (f0((1 - 1), -1));
+                if (x == 0) {
+                    return;
+                }
+            }
+        }
+    }
+    return;
+}
+
+main() {
+    (f0(1, 0));
+    (f1());
+    return -123;
+}

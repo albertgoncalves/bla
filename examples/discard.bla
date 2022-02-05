@@ -1,0 +1,11 @@
+f(x) {
+    if (x == 0) {
+        return 123;
+    }
+    return 789;
+}
+
+main() {
+    _ = f(0);
+    return 456;
+}
