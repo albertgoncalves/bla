@@ -143,10 +143,17 @@ compileStmt context0 (AstStmtIf _ condition body) =
             `setStackOffset` getContextStackOffset context0
         )
         body
-compileStmt context (AstStmtRet _ expr) =
+compileStmt context (AstStmtRet _ (Just expr)) =
   decrStackOffset $
     appendContextInsts
       (compileExpr context expr)
+      [ PreInstLabelPush $ getLabelRet $ getContextLabels context,
+        InstJump
+      ]
+compileStmt context (AstStmtRet _ Nothing) =
+  decrStackOffset $
+    appendContextInsts
+      context
       [ PreInstLabelPush $ getLabelRet $ getContextLabels context,
         InstJump
       ]
@@ -191,9 +198,10 @@ getVars xs = M.fromList $ zip (reverse xs) [0 ..]
 
 compileFunc :: Compiler -> AstFunc -> Compiler
 compileFunc compiler0 (AstFunc _ name [] [] body returnExpr) =
-  appendCompilerInsts
-    (getContextCompiler context2)
-    [PreInstLabelSet returnLabel, InstSwap, InstJump]
+  appendCompilerInsts (getContextCompiler context2) $
+    PreInstLabelSet returnLabel : case returnExpr of
+      Just _ -> [InstSwap, InstJump]
+      Nothing -> [InstJump]
   where
     returnLabel = makeRetLabel name
     context0 = Context 0 M.empty $ Labels returnLabel []
@@ -202,21 +210,30 @@ compileFunc compiler0 (AstFunc _ name [] [] body returnExpr) =
         compileStmt
         (context0 $ appendCompilerInsts compiler0 [PreInstLabelSet name])
         body
-    context2 = compileExpr (context0 $ getContextCompiler context1) returnExpr
+    context2 =
+      maybe
+        (context0 $ getContextCompiler context1)
+        (compileExpr $ context0 $ getContextCompiler context1)
+        returnExpr
 compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
   appendCompilerInsts (getContextCompiler context2) $
-    PreInstLabelSet returnLabel :
-    let n = length args + length locals - 1
-     in if n == 0
-          then [InstStore, InstLitInt n, InstSwap, InstJump]
-          else
-            [ InstStore,
-              InstLitInt n,
-              InstDrop,
-              InstLitInt n,
-              InstSwap,
-              InstJump
-            ]
+    case returnExpr of
+      Just _ ->
+        PreInstLabelSet returnLabel :
+        let n = length args + length locals - 1
+         in if n == 0
+              then [InstStore, InstLitInt n, InstSwap, InstJump]
+              else
+                [ InstStore,
+                  InstLitInt n,
+                  InstDrop,
+                  InstLitInt n,
+                  InstSwap,
+                  InstJump
+                ]
+      Nothing ->
+        let n = length args + length locals
+         in [PreInstLabelSet returnLabel, InstDrop, InstLitInt n, InstJump]
   where
     returnLabel = makeRetLabel name
     context0 = Context 0 (getVars $ args ++ locals) $ Labels returnLabel []
@@ -232,7 +249,11 @@ compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
                     else [InstRsrv, InstLitInt n]
         )
         body
-    context2 = compileExpr (context0 $ getContextCompiler context1) returnExpr
+    context2 =
+      maybe
+        (context0 $ getContextCompiler context1)
+        (compileExpr $ context0 $ getContextCompiler context1)
+        returnExpr
 
 compile :: [AstFunc] -> [Inst]
 compile =

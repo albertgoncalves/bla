@@ -10,7 +10,7 @@ import Ast
     Pos,
     UnOp (..),
   )
-import Control.Applicative (Alternative (..))
+import Control.Applicative (Alternative (..), optional)
 import Data.Bifunctor (first)
 import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 import Data.Maybe (fromMaybe)
@@ -168,7 +168,8 @@ statement =
       AstStmtCont
         <$> position <*> (token (string "continue") *> integer <* semicolon),
       AstStmtRet
-        <$> position <*> (token (string "return") *> expr <* semicolon),
+        <$> position
+        <*> (token (string "return") *> optional expr <* semicolon),
       AstStmtAssign
         <$> position <*> (ident <* token (char '=')) <*> (expr <* semicolon),
       AstStmtDiscard

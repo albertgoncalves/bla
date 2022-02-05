@@ -26,7 +26,7 @@ data AstStmt
   | AstStmtLoop Pos [AstStmt]
   | AstStmtBreak Pos Int
   | AstStmtCont Pos Int
-  | AstStmtRet Pos AstExpr
+  | AstStmtRet Pos (Maybe AstExpr)
   | AstStmtDiscard Pos AstExpr
 
 data AstPreFunc = AstPreFunc
@@ -42,5 +42,5 @@ data AstFunc = AstFunc
     getAstFuncArgs :: [String],
     getAstFuncLocals :: [String],
     getAstFuncAst :: [AstStmt],
-    getAstFuncRet :: AstExpr
+    getAstFuncRet :: Maybe AstExpr
   }
