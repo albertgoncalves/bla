@@ -24,7 +24,6 @@ data Inst
   | InstLitInt Int
   | PreInstLabelSet String
   | PreInstLabelPush String
-  deriving (Show)
 
 newtype Node = Node {getNodeInt :: Int}
 

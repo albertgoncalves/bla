@@ -3,7 +3,6 @@ module Ast where
 data UnOp
   = UnOpBang
   | UnOpMinus
-  deriving (Show)
 
 data BinOp
   = BinOpAdd
@@ -11,7 +10,6 @@ data BinOp
   | BinOpMul
   | BinOpDiv
   | BinOpEq
-  deriving (Show)
 
 type Pos = Int
 
@@ -21,7 +19,6 @@ data AstExpr
   | AstExprUnOp Pos UnOp AstExpr
   | AstExprBinOp Pos AstExpr BinOp AstExpr
   | AstExprCall Pos String [AstExpr]
-  deriving (Show)
 
 data AstStmt
   = AstStmtAssign Pos String AstExpr
@@ -30,7 +27,6 @@ data AstStmt
   | AstStmtBreak Pos Int
   | AstStmtCont Pos Int
   | AstStmtRet Pos AstExpr
-  deriving (Show)
 
 data AstPreFunc = AstPreFunc
   { getAstPreFuncPos :: Pos,
@@ -38,7 +34,6 @@ data AstPreFunc = AstPreFunc
     getAstPreFuncArgs :: [String],
     getAstPreFuncAst :: [AstStmt]
   }
-  deriving (Show)
 
 data AstFunc = AstFunc
   { getAstFuncPos :: Pos,
@@ -48,4 +43,3 @@ data AstFunc = AstFunc
     getAstFuncAst :: [AstStmt],
     getAstFuncRet :: AstExpr
   }
-  deriving (Show)
