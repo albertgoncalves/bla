@@ -82,8 +82,11 @@ getVarOffset :: Context -> String -> Int
 getVarOffset context name =
   getContextStackOffset context + getContextVars context M.! name
 
-makeLabel :: Context -> String
-makeLabel = printf "_%d" . getCompilerLabelCount . getContextCompiler
+getLabel :: Int -> String
+getLabel = printf "_%d"
+
+labelFromContext :: Context -> String
+labelFromContext = getLabel . getCompilerLabelCount . getContextCompiler
 
 pushVar :: Context -> String -> [Inst]
 pushVar context name =
@@ -107,7 +110,7 @@ compileExpr context0 (AstExprCall _ name exprs) =
     (pushVar context1 name ++ [InstJump, PreInstLabelSet label])
     `setStackOffset` succ (getContextStackOffset context0)
   where
-    label = makeLabel context0
+    label = labelFromContext context0
     context1 =
       foldl'
         compileExpr
@@ -126,7 +129,7 @@ compileStmt context (AstStmtAssign _ name expr) =
 compileStmt context0 (AstStmtIf _ condition body) =
   appendContextInsts context2 [PreInstLabelSet label]
   where
-    label = makeLabel context0
+    label = labelFromContext context0
     context1 =
       compileExpr
         ( appendContextInsts
@@ -172,8 +175,8 @@ compileStmt context0 (AstStmtLoop _ body) =
       incrLabelCount $
         pushLabelLoop context1 $
           LabelLoop labelCont labelBreak
-    labelCont = makeLabel context0 ++ "_continue"
-    labelBreak = makeLabel context1 ++ "_break"
+    labelCont = labelFromContext context0 ++ "_continue"
+    labelBreak = labelFromContext context1 ++ "_break"
 compileStmt context (AstStmtBreak _ n) =
   appendContextInsts context [PreInstLabelPush labelBreak, InstJump]
   where
@@ -257,20 +260,23 @@ compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
         (compileExpr $ context0 $ getContextCompiler context1)
         returnExpr
 
+entryPoint :: String -> Int -> (Int, [Inst])
+entryPoint name n =
+  ( succ n,
+    [ PreInstLabelPush label,
+      PreInstLabelPush name,
+      InstJump,
+      PreInstLabelSet label,
+      InstHalt
+    ]
+  )
+  where
+    label = getLabel n
+
 compile :: [AstFunc] -> [Inst]
 compile =
   getCompilerInsts
-    . foldl'
-      compileFunc
-      ( Compiler
-          1
-          [ PreInstLabelPush "_0",
-            PreInstLabelPush "main",
-            InstJump,
-            PreInstLabelSet "_0",
-            InstHalt
-          ]
-      )
+    . foldl' compileFunc (uncurry Compiler $ entryPoint "main" 0)
 
 weightInst :: Inst -> Int
 weightInst (PreInstLabelPush _) = 2
