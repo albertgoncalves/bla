@@ -69,8 +69,8 @@ pushLabelLoop
       (Labels labelRet $ x : labelLoops)
       compiler
 
-findLabelLoop :: Context -> Int -> LabelLoop
-findLabelLoop (Context _ _ (Labels _ labelLoops) _) = (labelLoops !!)
+findLabelLoop :: Int -> Context -> LabelLoop
+findLabelLoop n = (!! n) . getLabelLoop . getContextLabels
 
 dropLabelLoop :: Context -> Context
 dropLabelLoop
@@ -177,11 +177,11 @@ compileStmt context0 (AstStmtLoop _ body) =
 compileStmt context (AstStmtBreak _ n) =
   appendContextInsts context [PreInstLabelPush labelBreak, InstJump]
   where
-    (LabelLoop _ labelBreak) = findLabelLoop context n
+    (LabelLoop _ labelBreak) = findLabelLoop n context
 compileStmt context (AstStmtCont _ n) =
   appendContextInsts context [PreInstLabelPush labelCont, InstJump]
   where
-    (LabelLoop labelCont _) = findLabelLoop context n
+    (LabelLoop labelCont _) = findLabelLoop n context
 compileStmt context (AstStmtDiscard _ expr) =
   decrStackOffset $
     appendContextInsts (compileExpr context expr) [InstDrop, InstLitInt 1]
