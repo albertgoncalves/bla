@@ -1,9 +1,9 @@
-f() {
+f() i32 {
     x = -1;
     return x;
     x = 2;
 }
 
-main() {
+main() i32 {
     return f();
 }

@@ -1,11 +1,11 @@
-f(x) {
+f(x i32) i32 {
     if (x == 0) {
         return 123;
     }
     return 789;
 }
 
-main() {
+main() i32 {
     _ = f(0);
-    return 456;
+    return f(1);
 }
