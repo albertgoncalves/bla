@@ -17,10 +17,12 @@ import Data.Maybe (fromMaybe)
 
 type Source = String
 
+type Consumed = Bool
+
 -- NOTE: See `https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf`.
 -- NOTE: See `https://serokell.io/blog/parser-combinators-in-haskell`.
 newtype Parser a = Parser
-  { runParser :: Source -> Either (Bool, Maybe Pos) (Bool, (Source, a))
+  { runParser :: Source -> Either (Consumed, Maybe Pos) (Consumed, (Source, a))
   }
 
 instance Functor Parser where
