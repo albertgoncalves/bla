@@ -185,7 +185,15 @@ statements :: Parser [AstStmt]
 statements = some statement
 
 type' :: Parser AstType
-type' = AstTypeI32 <$> position <* token (string "i32")
+type' =
+  foldr1
+    (<|>)
+    [ AstTypeI32 <$> position <* token (string "i32"),
+      AstTypeFunc
+        <$> (position <* token (string "::"))
+        <*> parens (sepBy type' comma)
+        <*> optional type'
+    ]
 
 identType :: Parser (String, AstType)
 identType = (,) <$> ident <*> type'
