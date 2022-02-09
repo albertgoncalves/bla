@@ -12,7 +12,7 @@ import Ast
   )
 import Control.Applicative (Alternative (..), optional)
 import Data.Bifunctor (first)
-import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
+import Data.Char (isAlphaNum, isDigit, isLower, isSpace)
 import Data.Maybe (fromMaybe)
 
 type Source = String
@@ -116,7 +116,7 @@ integer = read <$> digits <|> ((read .) . (:) <$> char '-' <*> digits)
 
 ident :: Parser String
 ident =
-  token $ (:) <$> satisfy isAlpha <*> many (satisfy isAlphaNum <|> char '_')
+  token $ (:) <$> satisfy isLower <*> many (satisfy isAlphaNum <|> char '_')
 
 unOp :: Parser AstExpr
 unOp = parens (foldr1 (<|>) (map f [(UnOpBang, '!'), (UnOpMinus, '-')]))
