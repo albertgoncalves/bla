@@ -6,6 +6,7 @@ import Ast
   ( AstExpr (..),
     AstPreFunc (..),
     AstStmt (..),
+    AstType (..),
     BinOp (..),
     Pos,
     UnOp (..),
@@ -183,12 +184,19 @@ statement =
 statements :: Parser [AstStmt]
 statements = some statement
 
+type' :: Parser AstType
+type' = AstTypeI32 <$> position <* token (string "i32")
+
+identType :: Parser (String, AstType)
+identType = (,) <$> ident <*> type'
+
 func :: Parser AstPreFunc
 func =
   AstPreFunc
     <$> position
     <*> ident
-    <*> parens (sepBy ident comma)
+    <*> parens (sepBy identType comma)
+    <*> optional type'
     <*> braces statements
 
 program :: Parser [AstPreFunc]

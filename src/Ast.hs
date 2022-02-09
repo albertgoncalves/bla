@@ -30,18 +30,24 @@ data AstStmt
   | AstStmtDiscard Pos AstExpr
   | AstStmtEffect Pos AstExpr
 
+data AstType
+  = AstTypeI32 Pos
+  | AstTypeFunc Pos [AstType] (Maybe AstType)
+  deriving (Eq)
+
 data AstPreFunc = AstPreFunc
   { getAstPreFuncPos :: Pos,
     getAstPreFuncName :: String,
-    getAstPreFuncArgs :: [String],
+    getAstPreFuncArgs :: [(String, AstType)],
+    getAstPreFuncRetType :: Maybe AstType,
     getAstPreFuncAst :: [AstStmt]
   }
 
 data AstFunc = AstFunc
   { getAstFuncPos :: Pos,
     getAstFuncName :: String,
-    getAstFuncArgs :: [String],
+    getAstFuncArgs :: [(String, AstType)],
     getAstFuncLocals :: [String],
     getAstFuncAst :: [AstStmt],
-    getAstFuncRet :: Maybe AstExpr
+    getAstFuncRet :: Maybe (AstExpr, AstType)
   }
