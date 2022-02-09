@@ -143,8 +143,15 @@ binOp =
   where
     f (op, p) = AstExprBinOp <$> position <*> expr <*> (op <$ p) <*> expr
 
+exprIdent :: Parser AstExpr
+exprIdent = AstExprVar <$> position <*> ident
+
 call :: Parser AstExpr
-call = AstExprCall <$> position <*> ident <*> parens (sepBy expr comma)
+call =
+  AstExprCall
+    <$> position
+    <*> (exprIdent <|> parens expr)
+    <*> parens (sepBy expr comma)
 
 expr :: Parser AstExpr
 expr =
@@ -154,7 +161,7 @@ expr =
       binOp,
       call,
       AstExprInt <$> position <*> integer,
-      AstExprVar <$> position <*> ident,
+      exprIdent,
       parens expr
     ]
 

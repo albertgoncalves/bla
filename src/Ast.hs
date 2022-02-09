@@ -18,7 +18,7 @@ data AstExpr
   | AstExprVar Pos String
   | AstExprUnOp Pos UnOp AstExpr
   | AstExprBinOp Pos AstExpr BinOp AstExpr
-  | AstExprCall Pos String [AstExpr]
+  | AstExprCall Pos AstExpr [AstExpr]
 
 data AstStmt
   = AstStmtAssign Pos String AstExpr

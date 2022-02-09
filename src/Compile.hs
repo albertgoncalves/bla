@@ -104,10 +104,11 @@ compileExpr context (AstExprUnOp _ op expr) =
 compileExpr context (AstExprBinOp _ l op r) =
   decrStackOffset $
     appendContextInsts (compileExpr (compileExpr context l) r) [binOpToInst op]
-compileExpr context0 (AstExprCall _ name exprs) =
-  appendContextInsts
-    context1
-    (pushVar context1 name ++ [InstJump, PreInstLabelSet label])
+-- NOTE: Even though some functions do not return values, we always augment
+-- the stack here _as if_ that was true. We end up handling this when compiling
+-- `AstStmtEffect` statements below, which blindly decrements the stack offset.
+compileExpr context0 (AstExprCall _ expr args) =
+  appendContextInsts context2 [InstJump, PreInstLabelSet label]
     `setStackOffset` succ (getContextStackOffset context0)
   where
     label = labelFromContext context0
@@ -118,7 +119,8 @@ compileExpr context0 (AstExprCall _ name exprs) =
             incrStackOffset $
               appendContextInsts context0 [PreInstLabelPush label]
         )
-        exprs
+        args
+    context2 = compileExpr context1 expr
 
 compileStmt :: Context -> AstStmt -> Context
 compileStmt context (AstStmtAssign _ name expr) =
@@ -188,6 +190,13 @@ compileStmt context (AstStmtCont _ n) =
 compileStmt context (AstStmtDiscard _ expr) =
   decrStackOffset $
     appendContextInsts (compileExpr context expr) [InstDrop, InstLitInt 1]
+-- NOTE: We need to decrement the stack offset here because the compiler always
+-- thinks a function call will leave a value on the stack. It may be nicer to
+-- compile function calls in a more thoughtful way; one in which functions that
+-- do not return a value do not result in stack offset being incremented. Doing
+-- this would require augmenting the `Ast` information the compiler has access
+-- to. This _seems_ to work for now, but I'm worried there is a bug waiting to
+-- be found here.
 compileStmt context (AstStmtEffect _ expr) =
   decrStackOffset $ compileExpr context expr
 
