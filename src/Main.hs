@@ -7,6 +7,7 @@ import Parse (Source, parse)
 import PreCompile (preCompile)
 import System.Environment (getArgs, getExecutablePath)
 import Text.Printf (printf)
+import Type (checkFuncs)
 import Vm (Node (..), run)
 
 getRowCol :: Source -> Pos -> (Int, Int)
@@ -35,5 +36,5 @@ main = do
         either
           (uncurry (showError path source) . swap)
           (show . getNodeInt . head . validate . run . assemble . compile)
-          (parse source >>= preCompile)
+          (parse source >>= preCompile >>= checkFuncs)
     _ -> getExecutablePath >>= putStrLn . printf "$ %s path/to/script.bla"
