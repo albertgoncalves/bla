@@ -36,5 +36,5 @@ main = do
         either
           (uncurry (showError path source) . swap)
           (show . getNodeInt . head . validate . run . assemble . compile)
-          (parse source >>= preCompile >>= checkFuncs)
+          (parse source >>= checkFuncs >>= preCompile)
     _ -> getExecutablePath >>= putStrLn . printf "$ %s path/to/script.bla"

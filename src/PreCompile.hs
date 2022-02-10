@@ -27,13 +27,18 @@ getAssigns ((AstStmtLoop _ xs0) : xs1) = getAssigns $ xs0 ++ xs1
 getAssigns (_ : xs) = getAssigns xs
 
 intoFunc :: AstPreFunc -> Either Pos AstFunc
-intoFunc (AstPreFunc pos name args returnType body) =
+intoFunc (AstPreFunc pos name args _ body) =
   case popLast body of
     Nothing -> Left pos
     Just (body', AstStmtRet _ returnExpr) ->
       Right $
-        AstFunc pos name args (nub $ getAssigns body) body' $
-          (,) <$> returnExpr <*> returnType
+        AstFunc
+          pos
+          name
+          (map fst args)
+          (nub $ getAssigns body)
+          body'
+          returnExpr
     Just (_, x) -> Left $ getPos x
 
 preCompile :: [AstPreFunc] -> Either (String, Pos) [AstFunc]

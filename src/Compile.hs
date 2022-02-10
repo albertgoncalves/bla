@@ -228,13 +228,13 @@ compileFunc compiler0 (AstFunc _ name [] [] body returnExpr) =
       maybe
         (context0 $ getContextCompiler context1)
         (compileExpr $ context0 $ getContextCompiler context1)
-        (fst <$> returnExpr)
+        returnExpr
 compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
   appendCompilerInsts (getContextCompiler context2) $
     case returnExpr of
       Just _ ->
         PreInstLabelSet returnLabel :
-        let n = length args' + length locals - 1
+        let n = length args + length locals - 1
          in if n == 0
               then [InstStore, InstLitInt n, InstSwap, InstJump]
               else
@@ -246,12 +246,11 @@ compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
                   InstJump
                 ]
       Nothing ->
-        let n = length args' + length locals
+        let n = length args + length locals
          in [PreInstLabelSet returnLabel, InstDrop, InstLitInt n, InstJump]
   where
-    args' = map fst args
     returnLabel = makeRetLabel name
-    context0 = Context 0 (getVars $ args' ++ locals) $ Labels returnLabel []
+    context0 = Context 0 (getVars $ args ++ locals) $ Labels returnLabel []
     context1 =
       foldl'
         compileStmt
@@ -268,7 +267,7 @@ compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
       maybe
         (context0 $ getContextCompiler context1)
         (compileExpr $ context0 $ getContextCompiler context1)
-        (fst <$> returnExpr)
+        returnExpr
 
 entryPoint :: String -> Int -> (Int, [Inst])
 entryPoint name n =

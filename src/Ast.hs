@@ -33,7 +33,11 @@ data AstStmt
 data AstType
   = AstTypeI32 Pos
   | AstTypeFunc Pos [AstType] (Maybe AstType)
-  deriving (Eq)
+
+instance Eq AstType where
+  (AstTypeI32 _) == (AstTypeI32 _) = True
+  (AstTypeFunc _ as0 r0) == (AstTypeFunc _ as1 r1) = (as0 == as1) && (r0 == r1)
+  _ == _ = False
 
 data AstPreFunc = AstPreFunc
   { getAstPreFuncPos :: Pos,
@@ -46,8 +50,8 @@ data AstPreFunc = AstPreFunc
 data AstFunc = AstFunc
   { getAstFuncPos :: Pos,
     getAstFuncName :: String,
-    getAstFuncArgs :: [(String, AstType)],
+    getAstFuncArgs :: [String],
     getAstFuncLocals :: [String],
     getAstFuncAst :: [AstStmt],
-    getAstFuncRet :: Maybe (AstExpr, AstType)
+    getAstFuncRet :: Maybe AstExpr
   }
