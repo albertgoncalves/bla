@@ -1,0 +1,15 @@
+f0(x i32) i32 {
+    return (x - 1);
+}
+
+f1(x i32, y i32) :: (i32) i32 {
+    _ = (x + y);
+    return f0;
+}
+
+main() i32 {
+    a = 0;
+    b = 1;
+    c = 2;
+    return (f1(a, b))(c);
+}
