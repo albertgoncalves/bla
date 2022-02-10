@@ -1,0 +1,26 @@
+main() i32 {
+    f = f2();
+    x = 10;
+    y = x;
+    g = f(y);
+    return (x * g(-987, 10));
+}
+
+f2() :: (i32) :: (i32, i32) i32 {
+    x = 0;
+    (f3(x));
+    return f1;
+}
+
+f1(y i32) :: (i32, i32) i32 {
+    x = f0;
+    return x;
+}
+
+f0(x i32, y i32) i32 {
+    return ((x - 3) / y);
+}
+
+f3(x i32) {
+    return;
+}
