@@ -7,7 +7,8 @@ import Data.Maybe (catMaybes)
 import Prelude hiding (lookup)
 
 data Sig = Sig
-  { getSigArgs :: [AstType],
+  { getSigPos :: Pos,
+    getSigArgs :: [AstType],
     getSigRet :: Maybe AstType
   }
 
@@ -32,7 +33,7 @@ toType sigs vars (AstExprVar pos ident) =
     Just type' -> Right $ Just type'
     Nothing ->
       case lookup ident sigs of
-        Just (Sig argTypes returnType) ->
+        Just (Sig _ argTypes returnType) ->
           Right $ Just $ AstTypeFunc pos argTypes returnType
         Nothing -> Left $ typeError pos
 toType sigs vars (AstExprUnOp pos _ expr) =
@@ -118,8 +119,14 @@ checkFunc sigs func =
       (getAstPreFuncAst func)
 
 toSig :: AstPreFunc -> (String, Sig)
-toSig (AstPreFunc _ name args returnType _) =
-  (name, Sig (map snd args) returnType)
+toSig (AstPreFunc pos name args returnType _) =
+  (name, Sig pos (map snd args) returnType)
 
 checkFuncs :: [AstPreFunc] -> Either (String, Pos) [AstPreFunc]
-checkFuncs funcs = mapM (checkFunc $ fromList $ map toSig funcs) funcs
+checkFuncs funcs =
+  case lookup "main" sigs of
+    Just (Sig _ [] (Just (AstTypeI32 _))) -> mapM (checkFunc sigs) funcs
+    Just (Sig pos _ _) -> Left $ typeError pos
+    Nothing -> Left $ typeError 0
+  where
+    sigs = fromList $ map toSig funcs
