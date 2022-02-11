@@ -14,23 +14,6 @@ data Sig = Sig
 typeError :: Pos -> (String, Pos)
 typeError = (,) "type"
 
-findCallType ::
-  Map String Sig ->
-  Map String AstType ->
-  AstExpr ->
-  Either (String, Pos) (Maybe AstType)
-findCallType _ _ (AstExprInt pos _) = Left $ typeError pos
-findCallType _ _ (AstExprUnOp pos _ _) = Left $ typeError pos
-findCallType _ _ (AstExprBinOp pos _ _ _) = Left $ typeError pos
-findCallType sigs vars (AstExprVar pos ident) =
-  case lookup ident vars of
-    Just type' -> Right $ Just type'
-    Nothing -> case lookup ident sigs of
-      Just (Sig argTypes returnType) ->
-        Right $ Just $ AstTypeFunc pos argTypes returnType
-      Nothing -> Left $ typeError pos
-findCallType sigs vars (AstExprCall _ expr _) = findCallType sigs vars expr
-
 toType ::
   Map String Sig ->
   Map String AstType ->
@@ -59,17 +42,17 @@ toType sigs vars (AstExprBinOp pos left _ right) =
         l@(Left _) -> l
     Right _ -> Left $ typeError $ getPos left
     l@(Left _) -> l
--- NOTE: We're not handling nested calls correctly.
-toType funcs vars (AstExprCall _ expr args) =
-  case findCallType funcs vars expr of
-    Right (Just (AstTypeFunc _ argTypes returnType)) ->
-      case mapM (toType funcs vars) args of
-        Right types ->
-          if argTypes == catMaybes types
+toType sigs vars (AstExprCall _ expr args) = do
+  case toType sigs vars expr of
+    Right (Just (AstTypeFunc _ expectedArgTypes returnType)) ->
+      case mapM (toType sigs vars) args of
+        Right actualArgTypes ->
+          if expectedArgTypes == catMaybes actualArgTypes
             then Right returnType
             else Left $ typeError $ getPos expr
         Left e -> Left e
-    _ -> Left $ typeError $ getPos expr
+    Right _ -> Left $ typeError $ getPos expr
+    l@(Left _) -> l
 
 getPos :: AstExpr -> Pos
 getPos (AstExprInt pos _) = pos
