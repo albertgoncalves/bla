@@ -11,6 +11,13 @@ data Sig = Sig
     getSigRet :: Maybe AstType
   }
 
+getPos :: AstExpr -> Pos
+getPos (AstExprInt pos _) = pos
+getPos (AstExprVar pos _) = pos
+getPos (AstExprUnOp pos _ _) = pos
+getPos (AstExprBinOp pos _ _ _) = pos
+getPos (AstExprCall pos _ _) = pos
+
 typeError :: Pos -> (String, Pos)
 typeError = (,) "type"
 
@@ -53,13 +60,6 @@ toType sigs vars (AstExprCall _ expr args) = do
         Left e -> Left e
     Right _ -> Left $ typeError $ getPos expr
     l@(Left _) -> l
-
-getPos :: AstExpr -> Pos
-getPos (AstExprInt pos _) = pos
-getPos (AstExprVar pos _) = pos
-getPos (AstExprUnOp pos _ _) = pos
-getPos (AstExprBinOp pos _ _ _) = pos
-getPos (AstExprCall pos _ _) = pos
 
 checkStmt ::
   Map String Sig ->
