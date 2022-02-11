@@ -1,11 +1,11 @@
-f(x i32) i32 {
+f(x i32) :: i32 {
     if (x == 0) {
         return 123;
     }
     return 789;
 }
 
-main() i32 {
+main() :: i32 {
     _ = f(0);
     return f(1);
 }

@@ -1,10 +1,10 @@
-f1() i32 {
+f1() :: i32 {
     # ...
     return 12345;
     # ...
 }
 
-main() i32 {
+main() :: i32 {
     i = 0;
     loop {
         loop {
@@ -21,7 +21,7 @@ main() i32 {
     return x;
 }
 
-f0() i32 {
+f0() :: i32 {
     # ...
     return f1();
     # ...

@@ -197,9 +197,9 @@ type' =
     (<|>)
     [ AstTypeI32 <$> position <* token (string "i32"),
       AstTypeFunc
-        <$> (position <* token (string "::"))
-        <*> parens (sepBy type' comma)
-        <*> optional type'
+        <$> (position <* token (string "fn") <* token (char '('))
+        <*> (sepBy type' comma <* token (char ')'))
+        <*> optional (token (string "->") *> type')
     ]
 
 identType :: Parser (String, AstType)
@@ -211,7 +211,7 @@ func =
     <$> position
     <*> ident
     <*> parens (sepBy identType comma)
-    <*> optional type'
+    <*> optional (token (string "::") *> type')
     <*> braces statements
 
 program :: Parser [AstPreFunc]

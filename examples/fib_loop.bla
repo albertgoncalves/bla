@@ -1,4 +1,4 @@
-fib(n i32) i32 {
+fib(n i32) :: i32 {
     a = 0;
     b = -1;
     b = (-b);
@@ -14,6 +14,6 @@ fib(n i32) i32 {
     return a;
 }
 
-main() i32 {
+main() :: i32 {
     return (-(-fib(50)));
 }
