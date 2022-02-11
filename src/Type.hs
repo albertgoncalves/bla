@@ -64,11 +64,12 @@ toType sigs vars (AstExprCall _ expr args) = do
 
 checkStmt ::
   Map String Sig ->
+  Int ->
   Maybe AstType ->
   Map String AstType ->
   AstStmt ->
   Either (String, Pos) (Map String AstType)
-checkStmt sigs _ vars (AstStmtAssign _ ident expr) =
+checkStmt sigs _ _ vars (AstStmtAssign _ ident expr) =
   case toType sigs vars expr of
     Right (Just rightType) ->
       case lookup ident vars of
@@ -79,16 +80,20 @@ checkStmt sigs _ vars (AstStmtAssign _ ident expr) =
         Nothing -> Right $ insert ident rightType vars
     Right Nothing -> Left $ typeError $ getPos expr
     Left e -> Left e
-checkStmt sigs returnType vars (AstStmtIf _ expr body) =
+checkStmt sigs depth returnType vars (AstStmtIf _ expr body) =
   case toType sigs vars expr of
     Right (Just (AstTypeI32 _)) ->
-      foldM (checkStmt sigs returnType) vars body
+      foldM (checkStmt sigs depth returnType) vars body
     _ -> Left $ typeError $ getPos expr
-checkStmt sigs returnType vars (AstStmtLoop _ body) =
-  foldM (checkStmt sigs returnType) vars body
-checkStmt _ _ vars (AstStmtBreak _ _) = Right vars
-checkStmt _ _ vars (AstStmtCont _ _) = Right vars
-checkStmt sigs (Just returnType0) vars (AstStmtRet _ (Just expr)) =
+checkStmt sigs depth returnType vars (AstStmtLoop _ body) =
+  foldM (checkStmt sigs (depth + 1) returnType) vars body
+checkStmt _ depth _ vars (AstStmtBreak pos n)
+  | (0 <= n) && ((n + 1) <= depth) = Right vars
+  | otherwise = Left $ typeError pos
+checkStmt _ depth _ vars (AstStmtCont pos n)
+  | (0 <= n) && ((n + 1) <= depth) = Right vars
+  | otherwise = Left $ typeError pos
+checkStmt sigs _ (Just returnType0) vars (AstStmtRet _ (Just expr)) =
   case toType sigs vars expr of
     Right (Just returnType1) ->
       if returnType0 == returnType1
@@ -96,15 +101,15 @@ checkStmt sigs (Just returnType0) vars (AstStmtRet _ (Just expr)) =
         else Left $ typeError $ getPos expr
     Right _ -> Left $ typeError $ getPos expr
     Left e -> Left e
-checkStmt _ Nothing vars (AstStmtRet _ Nothing) = Right vars
+checkStmt _ _ Nothing vars (AstStmtRet _ Nothing) = Right vars
 -- NOTE: Is this the best line number to report?
-checkStmt _ _ _ (AstStmtRet pos _) = Left $ typeError pos
-checkStmt sigs _ vars (AstStmtDiscard _ expr) =
+checkStmt _ _ _ _ (AstStmtRet pos _) = Left $ typeError pos
+checkStmt sigs _ _ vars (AstStmtDiscard _ expr) =
   case toType sigs vars expr of
     Right (Just _) -> Right vars
     Right _ -> Left $ typeError $ getPos expr
     Left e -> Left e
-checkStmt sigs _ vars (AstStmtEffect _ expr) =
+checkStmt sigs _ _ vars (AstStmtEffect _ expr) =
   case toType sigs vars expr of
     Right Nothing -> Right vars
     Right _ -> Left $ typeError $ getPos expr
@@ -114,7 +119,7 @@ checkFunc :: Map String Sig -> AstPreFunc -> Either (String, Pos) AstPreFunc
 checkFunc sigs func =
   func
     <$ foldM
-      (checkStmt sigs $ getSigRet $ sigs ! getAstPreFuncName func)
+      (checkStmt sigs 0 $ getSigRet $ sigs ! getAstPreFuncName func)
       (fromList $ getAstPreFuncArgs func)
       (getAstPreFuncAst func)
 
