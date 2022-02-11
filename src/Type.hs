@@ -3,7 +3,6 @@ module Type where
 import Ast (AstExpr (..), AstPreFunc (..), AstStmt (..), AstType (..), Pos)
 import Control.Monad (foldM)
 import Data.Map (Map, fromList, insert, lookup, (!))
-import Data.Maybe (catMaybes)
 import Prelude hiding (lookup)
 
 data Sig = Sig
@@ -55,7 +54,7 @@ toType sigs vars (AstExprCall _ expr args) = do
     Right (Just (AstTypeFunc _ expectedArgTypes returnType)) ->
       case mapM (toType sigs vars) args of
         Right actualArgTypes ->
-          if expectedArgTypes == catMaybes actualArgTypes
+          if map Just expectedArgTypes == actualArgTypes
             then Right returnType
             else Left $ typeError $ getPos expr
         Left e -> Left e
