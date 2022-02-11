@@ -102,7 +102,7 @@ checkStmt sigs _ (Just returnType0) vars (AstStmtRet _ (Just expr)) =
     Right _ -> Left $ typeError $ getPos expr
     Left e -> Left e
 checkStmt _ _ Nothing vars (AstStmtRet _ Nothing) = Right vars
--- NOTE: Is this the best line number to report?
+checkStmt _ _ _ _ (AstStmtRet _ (Just expr)) = Left $ typeError $ getPos expr
 checkStmt _ _ _ _ (AstStmtRet pos _) = Left $ typeError pos
 checkStmt sigs _ _ vars (AstStmtDiscard _ expr) =
   case toType sigs vars expr of
