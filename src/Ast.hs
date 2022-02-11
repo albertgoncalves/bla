@@ -48,8 +48,7 @@ data AstPreFunc = AstPreFunc
   }
 
 data AstFunc = AstFunc
-  { getAstFuncPos :: Pos,
-    getAstFuncName :: String,
+  { getAstFuncName :: String,
     getAstFuncArgs :: [String],
     getAstFuncLocals :: [String],
     getAstFuncAst :: [AstStmt],

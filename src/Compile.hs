@@ -211,7 +211,7 @@ getVars :: [String] -> M.Map String Int
 getVars xs = M.fromList $ zip (reverse xs) [0 ..]
 
 compileFunc :: Compiler -> AstFunc -> Compiler
-compileFunc compiler0 (AstFunc _ name [] [] body returnExpr) =
+compileFunc compiler0 (AstFunc name [] [] body returnExpr) =
   appendCompilerInsts (getContextCompiler context2) $
     PreInstLabelSet returnLabel : case returnExpr of
       Just _ -> [InstSwap, InstJump]
@@ -229,7 +229,7 @@ compileFunc compiler0 (AstFunc _ name [] [] body returnExpr) =
         (context0 $ getContextCompiler context1)
         (compileExpr $ context0 $ getContextCompiler context1)
         returnExpr
-compileFunc compiler0 (AstFunc _ name args locals body returnExpr) =
+compileFunc compiler0 (AstFunc name args locals body returnExpr) =
   appendCompilerInsts (getContextCompiler context2) $
     case returnExpr of
       Just _ ->

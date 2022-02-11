@@ -32,13 +32,7 @@ intoFunc (AstPreFunc pos name args _ body) =
     Nothing -> Left pos
     Just (body', AstStmtRet _ returnExpr) ->
       Right $
-        AstFunc
-          pos
-          name
-          (map fst args)
-          (nub $ getAssigns body)
-          body'
-          returnExpr
+        AstFunc name (map fst args) (nub $ getAssigns body) body' returnExpr
     Just (_, x) -> Left $ getPos x
 
 preCompile :: [AstPreFunc] -> Either (String, Pos) [AstFunc]
