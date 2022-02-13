@@ -162,6 +162,8 @@ expr =
       call,
       AstExprInt <$> position <*> integer,
       exprIdent,
+      parens
+        (AstExprAs <$> position <*> (expr <* token (string "as")) <*> type'),
       parens expr
     ]
 

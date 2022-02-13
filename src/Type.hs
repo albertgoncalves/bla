@@ -17,6 +17,7 @@ getPos (AstExprVar pos _) = pos
 getPos (AstExprUnOp pos _ _) = pos
 getPos (AstExprBinOp pos _ _ _) = pos
 getPos (AstExprCall pos _ _) = pos
+getPos (AstExprAs pos _ _) = pos
 
 typeError :: Pos -> (String, Pos)
 typeError = (,) "type"
@@ -27,6 +28,7 @@ toType ::
   AstExpr ->
   Either (String, Pos) (Maybe AstType)
 toType _ _ (AstExprInt pos _) = Right $ Just $ AstTypeI32 pos
+toType sigs vars (AstExprAs _ expr type') = Just type' <$ toType sigs vars expr
 toType sigs vars (AstExprVar pos ident) =
   case lookup ident vars of
     Just type' -> Right $ Just type'

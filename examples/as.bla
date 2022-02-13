@@ -1,0 +1,13 @@
+f0(f fn() -> i32) :: i32 {
+    return f();
+}
+
+f1() :: i32 {
+    return -567;
+}
+
+main() :: i32 {
+    x = (((f0 as i32) + 2) - 2);
+    f = (x as fn(fn() -> i32) -> i32);
+    return f(f1);
+}

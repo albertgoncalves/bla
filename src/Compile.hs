@@ -121,6 +121,7 @@ compileExpr context0 (AstExprCall _ expr args) =
         )
         args
     context2 = compileExpr context1 expr
+compileExpr context (AstExprAs _ expr _) = compileExpr context expr
 
 compileStmt :: Context -> AstStmt -> Context
 compileStmt context (AstStmtAssign _ name expr) =

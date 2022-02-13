@@ -19,6 +19,7 @@ data AstExpr
   | AstExprUnOp Pos UnOp AstExpr
   | AstExprBinOp Pos AstExpr BinOp AstExpr
   | AstExprCall Pos AstExpr [AstExpr]
+  | AstExprAs Pos AstExpr AstType
 
 data AstStmt
   = AstStmtAssign Pos String AstExpr
