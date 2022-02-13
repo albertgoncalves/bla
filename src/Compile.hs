@@ -2,7 +2,7 @@ module Compile where
 
 import Ast (AstExpr (..), AstFunc (..), AstStmt (..), BinOp (..), UnOp (..))
 import Data.List (foldl')
-import qualified Data.Map.Strict as M
+import Data.Map (Map, empty, fromList, member, (!))
 import Text.Printf (printf)
 import Vm (Inst (..))
 
@@ -18,7 +18,7 @@ data Labels = Labels
 
 data Context = Context
   { getContextStackOffset :: Int,
-    getContextVars :: M.Map String Int,
+    getContextVars :: Map String Int,
     getContextLabels :: Labels,
     getContextCompiler :: Compiler
   }
@@ -80,7 +80,7 @@ dropLabelLoop _ = undefined
 
 getVarOffset :: Context -> String -> Int
 getVarOffset context name =
-  getContextStackOffset context + getContextVars context M.! name
+  getContextStackOffset context + getContextVars context ! name
 
 getLabel :: Int -> String
 getLabel = printf "_%d"
@@ -90,7 +90,7 @@ labelFromContext = getLabel . getCompilerLabelCount . getContextCompiler
 
 pushVar :: Context -> String -> [Inst]
 pushVar context name =
-  if M.member name $ getContextVars context
+  if member name $ getContextVars context
     then [InstCopy, InstLitInt $ getVarOffset context name]
     else [PreInstLabelPush name]
 
@@ -208,8 +208,8 @@ appendCompilerInsts (Compiler labelCount insts0) insts1 =
 makeRetLabel :: String -> String
 makeRetLabel = printf "_%s_return"
 
-getVars :: [String] -> M.Map String Int
-getVars xs = M.fromList $ zip (reverse xs) [0 ..]
+getVars :: [String] -> Map String Int
+getVars xs = fromList $ zip (reverse xs) [0 ..]
 
 compileFunc :: Compiler -> AstFunc -> Compiler
 compileFunc compiler0 (AstFunc name [] [] body returnExpr) =
@@ -219,7 +219,7 @@ compileFunc compiler0 (AstFunc name [] [] body returnExpr) =
       Nothing -> [InstJump]
   where
     returnLabel = makeRetLabel name
-    context0 = Context 0 M.empty $ Labels returnLabel []
+    context0 = Context 0 empty $ Labels returnLabel []
     context1 =
       foldl'
         compileStmt
@@ -293,18 +293,18 @@ weightInst (PreInstLabelPush _) = 2
 weightInst (PreInstLabelSet _) = 0
 weightInst _ = 1
 
-getLabels :: [Inst] -> M.Map String Int
-getLabels xs = M.fromList $ f $ zip xs $ scanl (+) 0 $ map weightInst xs
+getLabels :: [Inst] -> Map String Int
+getLabels xs = fromList $ f $ zip xs $ scanl (+) 0 $ map weightInst xs
   where
     f [] = []
     f ((PreInstLabelSet x, n) : xs') = (x, n) : f xs'
     f (_ : xs') = f xs'
 
-resolve :: [Inst] -> M.Map String Int -> [Inst]
+resolve :: [Inst] -> Map String Int -> [Inst]
 resolve [] _ = []
 resolve (PreInstLabelSet _ : xs) m = resolve xs m
 resolve (PreInstLabelPush x : xs) m =
-  [InstPush, InstLitInt (m M.! x)] ++ resolve xs m
+  [InstPush, InstLitInt (m ! x)] ++ resolve xs m
 resolve (x : xs) m = x : resolve xs m
 
 assemble :: [Inst] -> [Inst]
