@@ -2,12 +2,19 @@
 !.gitignore
 !*.nix
 !.shellhook
+!.clang-format
 
 !vim/
 !*.vim
 
 !src/
+
+!src/com/
 !*.hs
+
+!src/vm/
+!*.hpp
+!*.cpp
 
 !examples/
 !*.bla

@@ -7,6 +7,7 @@ mkShell.override { stdenv = llvmPackages_12.stdenv; } {
         hlint
         libffi
         llvmPackages_12.lld
+        mold
         ormolu
         shellcheck
     ];

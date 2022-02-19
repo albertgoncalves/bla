@@ -3,7 +3,7 @@
 set -euo pipefail
 
 (
-    for x in "$WD/src"/*.hs; do
+    for x in "$WD/src/com"/*.hs; do
         (
             hlint "$x"
             ormolu -m inplace "$x"
@@ -12,13 +12,11 @@ set -euo pipefail
     for _ in $(jobs -p); do
         wait -n
     done
-)
-(
     flags=(
         -dynamic
         "-fdiagnostics-color=always"
         -funbox-strict-fields
-        "-i$WD/src"
+        "-i$WD/src/com"
         "-optl -fuse-ld=lld"
         "-outputdir $WD/build"
         -Wall
@@ -33,9 +31,38 @@ set -euo pipefail
         -Wunused-packages
         -Wunused-type-patterns
     )
-    ghc "${flags[@]}" -o "$WD/bin/main" "$WD/src/Main.hs"
+    ghc "${flags[@]}" -o "$WD/bin/compile" "$WD/src/com/Main.hs"
+)
+(
+    flags=(
+        "-ferror-limit=1"
+        -ffast-math
+        -fno-autolink
+        -fno-exceptions
+        -fno-math-errno
+        -fno-omit-frame-pointer
+        -fno-rtti
+        -fno-unwind-tables
+        "-fsanitize=address"
+        "-fsanitize=undefined"
+        -fshort-enums
+        "-march=native"
+        -O1
+        "-std=c++11"
+        -Werror
+        -Weverything
+        -Wno-c++98-compat-pedantic
+        -Wno-covered-switch-default
+        -Wno-extra-semi-stmt
+        -Wno-padded
+    )
+    clang-format -i -verbose "$WD/src/vm/"*
+    mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
+)
+(
     for x in "$WD/examples/"*.bla; do
         echo "$x"
-        "$WD/bin/main" "$x"
+        "$WD/bin/compile" "$x" "$WD/bin/main.blc" \
+            && "$WD/bin/vm" "$WD/bin/main.blc"
     done
 )

@@ -4,7 +4,27 @@ import Ast (AstExpr (..), AstFunc (..), AstStmt (..), BinOp (..), UnOp (..))
 import Data.List (foldl')
 import Data.Map (Map, empty, fromList, member, (!))
 import Text.Printf (printf)
-import Vm (Inst (..))
+
+data Inst
+  = InstHalt
+  | InstPush
+  | InstCopy
+  | InstStore
+  | InstDrop
+  | InstRsrv
+  | InstSwap
+  | InstJump
+  | InstJifz
+  | InstAdd
+  | InstSub
+  | InstMul
+  | InstDiv
+  | InstEq
+  | InstNeg
+  | InstNot
+  | InstLitInt Int
+  | PreInstLabelSet String
+  | PreInstLabelPush String
 
 data LabelLoop = LabelLoop
   { getLabelCont :: String,

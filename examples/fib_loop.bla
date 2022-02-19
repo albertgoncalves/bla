@@ -15,5 +15,5 @@ fib(n i32) :: i32 {
 }
 
 main() :: i32 {
-    return (-(-fib(50)));
+    return (-(-fib(46)));
 }
