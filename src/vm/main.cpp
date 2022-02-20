@@ -83,124 +83,149 @@ struct Memory {
     Program program;
 };
 
+static void inst_halt(Thread* thread) {
+    thread->alive = false;
+}
+
+static void inst_push(Program program, Thread* thread) {
+    EXIT_IF(program.insts_len < thread->insts_index);
+    u32 value = program.insts[thread->insts_index++];
+    EXIT_IF(CAP_STACK <= thread->stack.top);
+    thread->stack.nodes[thread->stack.top++].as_u32 = value;
+}
+
+static void inst_copy(Program program, Thread* thread) {
+    EXIT_IF(thread->stack.top == 0);
+    EXIT_IF(program.insts_len < thread->insts_index);
+    u32 offset = program.insts[thread->insts_index++];
+    EXIT_IF((thread->stack.top - 1) < offset);
+    Node node = thread->stack.nodes[(thread->stack.top - 1) - offset];
+    EXIT_IF(CAP_STACK <= thread->stack.top);
+    thread->stack.nodes[thread->stack.top++].as_u32 = node.as_u32;
+}
+
+static void inst_store(Program program, Thread* thread) {
+    EXIT_IF(thread->stack.top == 0);
+    Node node = thread->stack.nodes[--thread->stack.top];
+    EXIT_IF(program.insts_len < thread->insts_index);
+    u32 offset = program.insts[thread->insts_index++];
+    EXIT_IF((thread->stack.top - 1) < offset);
+    thread->stack.nodes[(thread->stack.top - 1) - offset].as_u32 = node.as_u32;
+}
+
+static void inst_drop(Program program, Thread* thread) {
+    EXIT_IF(program.insts_len < thread->insts_index);
+    u32 n = program.insts[thread->insts_index++];
+    EXIT_IF(n == 0);
+    EXIT_IF(thread->stack.top < n);
+    thread->stack.top -= n;
+}
+
+static void inst_rsrv(Program program, Thread* thread) {
+    EXIT_IF(program.insts_len < thread->insts_index);
+    u32 n = program.insts[thread->insts_index++];
+    EXIT_IF(n == 0);
+    thread->stack.top += n;
+    EXIT_IF(CAP_STACK < thread->stack.top);
+}
+
+static void inst_swap(Thread* thread) {
+    EXIT_IF(thread->stack.top < 2);
+    Node r = thread->stack.nodes[--thread->stack.top];
+    Node l = thread->stack.nodes[--thread->stack.top];
+    thread->stack.nodes[thread->stack.top++] = r;
+    thread->stack.nodes[thread->stack.top++] = l;
+}
+
+static void inst_jump(Thread* thread) {
+    EXIT_IF(thread->stack.top == 0);
+    thread->insts_index = thread->stack.nodes[--thread->stack.top].as_u32;
+}
+
+static void inst_jifz(Thread* thread) {
+    EXIT_IF(thread->stack.top < 2);
+    Node condition = thread->stack.nodes[--thread->stack.top];
+    Node jump = thread->stack.nodes[--thread->stack.top];
+    if (condition.as_u32 == 0) {
+        thread->insts_index = jump.as_u32;
+    }
+}
+
+#define INST_BINOP(f, op, type)                              \
+    static void f(Thread* thread) {                          \
+        EXIT_IF(thread->stack.top < 2);                      \
+        Node r = thread->stack.nodes[--thread->stack.top];   \
+        Node l = thread->stack.nodes[--thread->stack.top];   \
+        thread->stack.nodes[thread->stack.top++].as_##type = \
+            l.as_##type op r.as_##type;                      \
+    }
+
+INST_BINOP(inst_add, +, i32)
+INST_BINOP(inst_sub, -, i32)
+INST_BINOP(inst_mul, *, i32)
+INST_BINOP(inst_div, /, i32)
+INST_BINOP(inst_eq, ==, u32)
+
+#define INST_UNOP(f, op, type)                                        \
+    static void f(Thread* thread) {                                   \
+        EXIT_IF(thread->stack.top == 0);                              \
+        thread->stack.nodes[thread->stack.top - 1].as_##type =        \
+            op(thread->stack.nodes[thread->stack.top - 1].as_##type); \
+    }
+
+INST_UNOP(inst_neg, -, i32)
+INST_UNOP(inst_not, !, u32)
+
 static void step(Program program, Thread* thread) {
     EXIT_IF(program.insts_len < thread->insts_index);
     switch (static_cast<Inst>(program.insts[thread->insts_index++])) {
     case INST_HALT: {
-        thread->alive = false;
-        break;
+        return inst_halt(thread);
     }
     case INST_PUSH: {
-        EXIT_IF(program.insts_len < thread->insts_index);
-        u32 value = program.insts[thread->insts_index++];
-        EXIT_IF(CAP_STACK <= thread->stack.top);
-        thread->stack.nodes[thread->stack.top++].as_u32 = value;
-        break;
+        return inst_push(program, thread);
     }
     case INST_COPY: {
-        EXIT_IF(thread->stack.top == 0);
-        EXIT_IF(program.insts_len < thread->insts_index);
-        u32 offset = program.insts[thread->insts_index++];
-        EXIT_IF((thread->stack.top - 1) < offset);
-        Node node = thread->stack.nodes[(thread->stack.top - 1) - offset];
-        EXIT_IF(CAP_STACK <= thread->stack.top);
-        thread->stack.nodes[thread->stack.top++].as_u32 = node.as_u32;
-        break;
+        return inst_copy(program, thread);
     }
     case INST_STORE: {
-        EXIT_IF(thread->stack.top == 0);
-        Node node = thread->stack.nodes[--thread->stack.top];
-        EXIT_IF(program.insts_len < thread->insts_index);
-        u32 offset = program.insts[thread->insts_index++];
-        EXIT_IF((thread->stack.top - 1) < offset);
-        thread->stack.nodes[(thread->stack.top - 1) - offset].as_u32 =
-            node.as_u32;
-        break;
+        return inst_store(program, thread);
     }
     case INST_DROP: {
-        EXIT_IF(program.insts_len < thread->insts_index);
-        u32 n = program.insts[thread->insts_index++];
-        EXIT_IF(n == 0);
-        EXIT_IF(thread->stack.top < n);
-        thread->stack.top -= n;
-        break;
+        return inst_drop(program, thread);
     }
     case INST_RSRV: {
-        EXIT_IF(program.insts_len < thread->insts_index);
-        u32 n = program.insts[thread->insts_index++];
-        EXIT_IF(n == 0);
-        thread->stack.top += n;
-        EXIT_IF(CAP_STACK < thread->stack.top);
-        break;
+        return inst_rsrv(program, thread);
     }
     case INST_SWAP: {
-        EXIT_IF(thread->stack.top < 2);
-        Node r = thread->stack.nodes[--thread->stack.top];
-        Node l = thread->stack.nodes[--thread->stack.top];
-        thread->stack.nodes[thread->stack.top++] = r;
-        thread->stack.nodes[thread->stack.top++] = l;
-        break;
+        return inst_swap(thread);
     }
     case INST_JUMP: {
-        EXIT_IF(thread->stack.top == 0);
-        thread->insts_index = thread->stack.nodes[--thread->stack.top].as_u32;
-        break;
+        return inst_jump(thread);
     }
     case INST_JIFZ: {
-        EXIT_IF(thread->stack.top < 2);
-        Node condition = thread->stack.nodes[--thread->stack.top];
-        Node jump = thread->stack.nodes[--thread->stack.top];
-        if (condition.as_u32 == 0) {
-            thread->insts_index = jump.as_u32;
-        }
-        break;
+        return inst_jifz(thread);
     }
     case INST_ADD: {
-        EXIT_IF(thread->stack.top < 2);
-        Node r = thread->stack.nodes[--thread->stack.top];
-        Node l = thread->stack.nodes[--thread->stack.top];
-        thread->stack.nodes[thread->stack.top++].as_i32 = l.as_i32 + r.as_i32;
-        break;
+        return inst_add(thread);
     }
     case INST_SUB: {
-        EXIT_IF(thread->stack.top < 2);
-        Node r = thread->stack.nodes[--thread->stack.top];
-        Node l = thread->stack.nodes[--thread->stack.top];
-        thread->stack.nodes[thread->stack.top++].as_i32 = l.as_i32 - r.as_i32;
-        break;
+        return inst_sub(thread);
     }
     case INST_MUL: {
-        EXIT_IF(thread->stack.top < 2);
-        Node r = thread->stack.nodes[--thread->stack.top];
-        Node l = thread->stack.nodes[--thread->stack.top];
-        thread->stack.nodes[thread->stack.top++].as_i32 = l.as_i32 * r.as_i32;
-        break;
+        return inst_mul(thread);
     }
     case INST_DIV: {
-        EXIT_IF(thread->stack.top < 2);
-        Node r = thread->stack.nodes[--thread->stack.top];
-        Node l = thread->stack.nodes[--thread->stack.top];
-        thread->stack.nodes[thread->stack.top++].as_i32 = l.as_i32 / r.as_i32;
-        break;
+        return inst_div(thread);
     }
     case INST_EQ: {
-        EXIT_IF(thread->stack.top < 2);
-        Node r = thread->stack.nodes[--thread->stack.top];
-        Node l = thread->stack.nodes[--thread->stack.top];
-        thread->stack.nodes[thread->stack.top++].as_u32 = l.as_u32 == r.as_u32;
-        break;
+        return inst_eq(thread);
     }
     case INST_NEG: {
-        EXIT_IF(thread->stack.top == 0);
-        thread->stack.nodes[thread->stack.top - 1].as_i32 =
-            -(thread->stack.nodes[thread->stack.top - 1].as_i32);
-        break;
+        return inst_neg(thread);
     }
     case INST_NOT: {
-        EXIT_IF(thread->stack.top == 0);
-        thread->stack.nodes[thread->stack.top - 1].as_i32 =
-            !(thread->stack.nodes[thread->stack.top - 1].as_i32);
-        break;
+        return inst_not(thread);
     }
     default:
         EXIT();
