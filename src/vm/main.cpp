@@ -26,6 +26,8 @@ enum Inst {
     INST_EQ = 13,
     INST_NEG = 14,
     INST_NOT = 15,
+    INST_PRCH = 16,
+    INST_PRI32 = 17,
 };
 
 union Node {
@@ -148,6 +150,16 @@ INST_BINOP(inst_eq, ==, u32)
 INST_UNOP(inst_neg, -, i32)
 INST_UNOP(inst_not, !, u32)
 
+static void inst_prch(Thread* thread) {
+    EXIT_IF(thread->stack.top == 0);
+    putchar(thread->stack.nodes[--thread->stack.top].as_i32);
+}
+
+static void inst_pri32(Thread* thread) {
+    EXIT_IF(thread->stack.top == 0);
+    printf("%d", thread->stack.nodes[--thread->stack.top].as_i32);
+}
+
 static void step(Program program, Thread* thread) {
     EXIT_IF(program.insts_len < thread->insts_index);
     switch (static_cast<Inst>(program.insts[thread->insts_index++])) {
@@ -198,6 +210,12 @@ static void step(Program program, Thread* thread) {
     }
     case INST_NOT: {
         return inst_not(thread);
+    }
+    case INST_PRCH: {
+        return inst_prch(thread);
+    }
+    case INST_PRI32: {
+        return inst_pri32(thread);
     }
     default:
         EXIT();

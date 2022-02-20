@@ -146,11 +146,14 @@ binOp =
 exprIdent :: Parser AstExpr
 exprIdent = AstExprVar <$> position <*> ident
 
+intrinsic :: Parser AstExpr
+intrinsic = AstExprVar <$> position <*> ((:) <$> token (char '@') <*> ident)
+
 call :: Parser AstExpr
 call =
   AstExprCall
     <$> position
-    <*> (exprIdent <|> parens expr)
+    <*> (exprIdent <|> parens expr <|> intrinsic)
     <*> parens (sepBy expr comma)
 
 expr :: Parser AstExpr

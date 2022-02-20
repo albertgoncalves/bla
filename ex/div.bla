@@ -1,3 +1,5 @@
 main() :: i32 {
-    return (-(483 / -23));
+    (@print_i32((-(483 / -23))));
+    (@print_char(10));
+    return 0;
 }

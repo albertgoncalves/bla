@@ -128,6 +128,12 @@ toSig :: AstPreFunc -> (String, Sig)
 toSig (AstPreFunc pos name args returnType _) =
   (name, Sig pos (map snd args) returnType)
 
+intrinsics :: [(String, Sig)]
+intrinsics =
+  [ ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
+    ("@print_i32", Sig 0 [AstTypeI32 0] Nothing)
+  ]
+
 checkFuncs :: [AstPreFunc] -> Either (String, Pos) [AstPreFunc]
 checkFuncs funcs =
   case lookup "main" sigs of
@@ -135,4 +141,4 @@ checkFuncs funcs =
     Just (Sig pos _ _) -> Left $ typeError pos
     Nothing -> Left $ typeError 0
   where
-    sigs = fromList $ map toSig funcs
+    sigs = fromList $ intrinsics ++ map toSig funcs

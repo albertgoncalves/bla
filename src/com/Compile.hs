@@ -22,6 +22,8 @@ data Inst
   | InstEq
   | InstNeg
   | InstNot
+  | InstPrCh
+  | InstPrI32
   | InstLitInt Int
   | PreInstLabelSet String
   | PreInstLabelPush String
@@ -124,6 +126,10 @@ compileExpr context (AstExprUnOp _ op expr) =
 compileExpr context (AstExprBinOp _ l op r) =
   decrStackOffset $
     appendContextInsts (compileExpr (compileExpr context l) r) [binOpToInst op]
+compileExpr context0 (AstExprCall _ (AstExprVar _ "@print_char") args) =
+  appendContextInsts (foldl' compileExpr context0 args) [InstPrCh]
+compileExpr context0 (AstExprCall _ (AstExprVar _ "@print_i32") args) =
+  appendContextInsts (foldl' compileExpr context0 args) [InstPrI32]
 -- NOTE: Even though some functions do not return values, we always augment
 -- the stack here _as if_ that was true. We end up handling this when compiling
 -- `AstStmtEffect` statements below, which blindly decrements the stack offset.
