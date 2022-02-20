@@ -9,9 +9,12 @@ set -euo pipefail
             ormolu -m inplace "$x"
         ) &
     done
+    clang-format -i -verbose "$WD/src/vm/"* &
     for _ in $(jobs -p); do
         wait -n
     done
+)
+(
     flags=(
         -dynamic
         "-fdiagnostics-color=always"
@@ -57,7 +60,6 @@ set -euo pipefail
         -Wno-padded
         -Wno-reserved-id-macro
     )
-    clang-format -i -verbose "$WD/src/vm/"*
     mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
 )
 (
