@@ -55,6 +55,7 @@ set -euo pipefail
         -Wno-covered-switch-default
         -Wno-extra-semi-stmt
         -Wno-padded
+        -Wno-reserved-id-macro
     )
     clang-format -i -verbose "$WD/src/vm/"*
     mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
