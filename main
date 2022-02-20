@@ -63,7 +63,7 @@ set -euo pipefail
     mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
 )
 (
-    for x in "$WD/examples/"*.bla; do
+    for x in "$WD/ex/"*.bla; do
         echo "$x"
         "$WD/bin/com" "$x" "$WD/bin/main.blc" \
             && "$WD/bin/vm" "$WD/bin/main.blc"

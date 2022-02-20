@@ -16,7 +16,7 @@
 !*.hpp
 !*.cpp
 
-!examples/
+!ex/
 !*.bla
 
 !main
