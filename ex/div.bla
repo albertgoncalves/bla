@@ -1,5 +1,19 @@
 main() {
-    (@print_i32((-(483 / -23))));
-    (@print_char(10));
+    (f(-2));
+    return;
+}
+
+f(x i32) {
+    x = (-(483 / -23));
+    loop {
+        loop {
+            if (x == 21) {
+                (@print_i32(x));
+                x = 10;
+                (@print_char(x));
+                break 1;
+            }
+        }
+    }
     return;
 }
