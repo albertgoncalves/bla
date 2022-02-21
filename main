@@ -65,7 +65,6 @@ set -euo pipefail
 (
     for x in "$WD/ex/"*.bla; do
         echo "$x"
-        "$WD/bin/com" "$x" "$WD/bin/main.blc" \
-            && "$WD/bin/vm" "$WD/bin/main.blc"
+        run "$x" || echo $?
     done
 )
