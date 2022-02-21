@@ -7,7 +7,7 @@ if [ ! -d "$WD/bin" ]; then
 fi
 
 run() {
-    "$WD/bin/com" "$1" "$WD/bin/main.blc" && "$WD/bin/vm" "$WD/bin/main.blc"
+    "$WD/bin/com" "$1" "$2" && "$WD/bin/vm" "$2"
 }
 
 export -f run

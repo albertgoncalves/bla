@@ -65,6 +65,7 @@ set -euo pipefail
 (
     for x in "$WD/ex/"*.bla; do
         echo "$x"
-        run "$x" || echo $?
+        x=$(basename "$x" .bla)
+        run "$WD/ex/$x.bla" "$WD/ex/$x.blc" || echo $?
     done
 )
