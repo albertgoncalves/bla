@@ -30,6 +30,8 @@ enum Inst {
     INST_PRI32 = 17,
 };
 
+STATIC_ASSERT(sizeof(Inst) <= sizeof(u32));
+
 union Node {
     i32 as_i32;
     u32 as_u32;
