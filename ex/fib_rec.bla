@@ -8,6 +8,8 @@ fib(n i32) :: i32 {
     return (fib((n - 2)) + (fib((n - 1))));
 }
 
-main() :: i32 {
-    return fib(10);
+main() {
+    (@print_i32(fib(10)));
+    (@print_char(10));
+    return;
 }

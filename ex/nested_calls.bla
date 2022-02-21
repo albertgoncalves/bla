@@ -6,8 +6,10 @@ f1(x i32, f fn(i32) -> i32) :: fn(i32) -> i32 {
     return f0;
 }
 
-main() :: i32 {
+main() {
     x = 0;
     y = -233;
-    return (f1(0, f0))(y);
+    (@print_i32((f1(0, f0))(y)));
+    (@print_char(10));
+    return;
 }

@@ -5,7 +5,9 @@ f(x i32) :: i32 {
     return 789;
 }
 
-main() :: i32 {
+main() {
     _ = f(0);
-    return f(1);
+    (@print_i32(f(1)));
+    (@print_char(10));
+    return;
 }

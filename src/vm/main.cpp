@@ -276,7 +276,6 @@ i32 main(i32 n, const char** args) {
     while (thread->alive) {
         step(memory->program, thread);
     }
-    EXIT_IF(thread->stack.top != 1);
-    printf("%d\n", thread->stack.nodes[thread->stack.top - 1].as_i32);
+    EXIT_IF(thread->stack.top != 0);
     return EXIT_SUCCESS;
 }

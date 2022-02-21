@@ -4,7 +4,7 @@ f1() :: i32 {
     # ...
 }
 
-main() :: i32 {
+main() {
     i = 0;
     loop {
         loop {
@@ -18,7 +18,9 @@ main() :: i32 {
         }
         x = 3;
     }
-    return x;
+    (@print_i32(x));
+    (@print_char(10));
+    return;
 }
 
 f0() :: i32 {

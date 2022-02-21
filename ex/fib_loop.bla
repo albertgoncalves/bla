@@ -1,3 +1,7 @@
+println_i32(x i32) {
+    return;
+}
+
 fib(n i32) :: i32 {
     a = 0;
     b = -1;
@@ -14,6 +18,8 @@ fib(n i32) :: i32 {
     return a;
 }
 
-main() :: i32 {
-    return (-(-fib(46)));
+main() {
+    (@print_i32((-(-fib(46)))));
+    (@print_char(10));
+    return;
 }

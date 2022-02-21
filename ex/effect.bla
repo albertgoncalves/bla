@@ -31,8 +31,10 @@ f1() {
     return;
 }
 
-main() :: i32 {
+main() {
     (f0(1, 0));
     (f1());
-    return -123;
+    (@print_i32(-123));
+    (@print_char(10));
+    return;
 }

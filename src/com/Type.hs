@@ -137,7 +137,7 @@ intrinsics =
 checkFuncs :: [AstPreFunc] -> Either (String, Pos) [AstPreFunc]
 checkFuncs funcs =
   case lookup "main" sigs of
-    Just (Sig _ [] (Just (AstTypeI32 _))) -> mapM (checkFunc sigs) funcs
+    Just (Sig _ [] Nothing) -> mapM (checkFunc sigs) funcs
     Just (Sig pos _ _) -> Left $ typeError pos
     Nothing -> Left $ typeError 0
   where

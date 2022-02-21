@@ -4,6 +4,8 @@ f() :: i32 {
     x = 2;
 }
 
-main() :: i32 {
-    return f();
+main() {
+    (@print_i32(f()));
+    (@print_char(10));
+    return;
 }

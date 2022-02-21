@@ -1,9 +1,11 @@
-main() :: i32 {
+main() {
     f = f2();
     x = 10;
     y = x;
     g = f(y);
-    return (x * g(-987, 10));
+    (@print_i32((x * g(-987, 10))));
+    (@print_char(10));
+    return;
 }
 
 f2() :: fn(i32) -> fn(i32, i32) -> i32 {
