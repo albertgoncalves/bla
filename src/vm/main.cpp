@@ -10,23 +10,23 @@
 #define CAP_THREADS 1
 
 enum Inst {
-    INST_HALT = 0,
-    INST_PUSH = 1,
-    INST_COPY = 2,
+    INST_HALT  = 0,
+    INST_PUSH  = 1,
+    INST_COPY  = 2,
     INST_STORE = 3,
-    INST_DROP = 4,
-    INST_RSRV = 5,
-    INST_SWAP = 6,
-    INST_JUMP = 7,
-    INST_JIFZ = 8,
-    INST_ADD = 9,
-    INST_SUB = 10,
-    INST_MUL = 11,
-    INST_DIV = 12,
-    INST_EQ = 13,
-    INST_NEG = 14,
-    INST_NOT = 15,
-    INST_PRCH = 16,
+    INST_DROP  = 4,
+    INST_RSRV  = 5,
+    INST_SWAP  = 6,
+    INST_JUMP  = 7,
+    INST_JIFZ  = 8,
+    INST_ADD   = 9,
+    INST_SUB   = 10,
+    INST_MUL   = 11,
+    INST_DIV   = 12,
+    INST_EQ    = 13,
+    INST_NEG   = 14,
+    INST_NOT   = 15,
+    INST_PRCH  = 16,
     INST_PRI32 = 17,
 };
 
@@ -122,7 +122,7 @@ static void inst_jump(Thread* thread) {
 static void inst_jifz(Thread* thread) {
     EXIT_IF(thread->stack.top < 2);
     Node condition = thread->stack.nodes[--thread->stack.top];
-    Node jump = thread->stack.nodes[--thread->stack.top];
+    Node jump      = thread->stack.nodes[--thread->stack.top];
     if (condition.as_u32 == 0) {
         thread->insts_index = jump.as_u32;
     }
@@ -238,9 +238,9 @@ static Memory* alloc_memory() {
 
 static Thread* alloc_thread(Memory* memory) {
     EXIT_IF(CAP_THREADS <= memory->threads_len);
-    Thread* thread = &memory->threads[memory->threads_len++];
+    Thread* thread      = &memory->threads[memory->threads_len++];
     thread->insts_index = 0;
-    thread->alive = true;
+    thread->alive       = true;
     return thread;
 }
 
@@ -249,7 +249,7 @@ static Program read_program(const char* path) {
     EXIT_IF(file < 0);
     FileStat stat;
     EXIT_IF(fstat(file, &stat) < 0)
-    Program program = {};
+    Program program   = {};
     program.insts_len = static_cast<u32>(stat.st_size) / sizeof(u32);
     {
         void* address = mmap(null,
@@ -273,8 +273,8 @@ i32 main(i32 n, const char** args) {
         _exit(EXIT_SUCCESS);
     }
     EXIT_IF(n < 2);
-    Memory* memory = alloc_memory();
-    Thread* thread = alloc_thread(memory);
+    Memory* memory  = alloc_memory();
+    Thread* thread  = alloc_thread(memory);
     memory->program = read_program(args[1]);
     while (thread->alive) {
         step(memory->program, thread);
