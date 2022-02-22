@@ -7,11 +7,11 @@ import Text.Printf (printf)
 
 data Inst
   = InstHalt
-  | InstPush
-  | InstCopy
-  | InstStore
-  | InstDrop
-  | InstRsrv
+  | InstPush Int
+  | InstCopy Int
+  | InstStore Int
+  | InstDrop Int
+  | InstRsrv Int
   | InstSwap
   | InstJump
   | InstJifz
@@ -24,7 +24,6 @@ data Inst
   | InstNot
   | InstPrCh
   | InstPrI32
-  | InstLitInt Int
   | PreInstLabelSet String
   | PreInstLabelPush String
 
@@ -113,12 +112,12 @@ labelFromContext = getLabel . getCompilerLabelCount . getContextCompiler
 pushVar :: Context -> String -> [Inst]
 pushVar context name =
   if member name $ getContextVars context
-    then [InstCopy, InstLitInt $ getVarOffset context name]
+    then [InstCopy $ getVarOffset context name]
     else [PreInstLabelPush name]
 
 compileExpr :: Context -> AstExpr -> Context
 compileExpr context (AstExprInt _ x) =
-  incrStackOffset $ appendContextInsts context [InstPush, InstLitInt x]
+  incrStackOffset $ appendContextInsts context [InstPush x]
 compileExpr context (AstExprVar _ name) =
   incrStackOffset $ appendContextInsts context $ pushVar context name
 compileExpr context (AstExprUnOp _ op expr) =
@@ -154,7 +153,7 @@ compileStmt context (AstStmtAssign _ name expr) =
   decrStackOffset $
     appendContextInsts
       (compileExpr context expr)
-      [InstStore, InstLitInt $ getVarOffset context name]
+      [InstStore $ getVarOffset context name]
 compileStmt context0 (AstStmtIf _ condition body) =
   appendContextInsts context2 [PreInstLabelSet label]
   where
@@ -216,7 +215,7 @@ compileStmt context (AstStmtCont _ n) =
     (LabelLoop labelCont _) = findLabelLoop n context
 compileStmt context (AstStmtDiscard _ expr) =
   decrStackOffset $
-    appendContextInsts (compileExpr context expr) [InstDrop, InstLitInt 1]
+    appendContextInsts (compileExpr context expr) [InstDrop 1]
 -- NOTE: We need to decrement the stack offset here because the compiler always
 -- thinks a function call will leave a value on the stack. It may be nicer to
 -- compile function calls in a more thoughtful way; one in which functions that
@@ -263,18 +262,16 @@ compileFunc compiler0 (AstFunc name args locals body returnExpr) =
         PreInstLabelSet returnLabel :
         let n = length args + length locals - 1
          in if n == 0
-              then [InstStore, InstLitInt n, InstSwap, InstJump]
+              then [InstStore n, InstSwap, InstJump]
               else
-                [ InstStore,
-                  InstLitInt n,
-                  InstDrop,
-                  InstLitInt n,
+                [ InstStore n,
+                  InstDrop n,
                   InstSwap,
                   InstJump
                 ]
       Nothing ->
         let n = length args + length locals
-         in [PreInstLabelSet returnLabel, InstDrop, InstLitInt n, InstJump]
+         in [PreInstLabelSet returnLabel, InstDrop n, InstJump]
   where
     returnLabel = makeRetLabel name
     context0 = Context 0 (getVars $ args ++ locals) $ Labels returnLabel []
@@ -285,9 +282,7 @@ compileFunc compiler0 (AstFunc name args locals body returnExpr) =
             appendCompilerInsts compiler0 $
               PreInstLabelSet name :
               let n = length locals
-               in if n == 0
-                    then []
-                    else [InstRsrv, InstLitInt n]
+               in [InstRsrv n | n /= 0]
         )
         body
     context2 =
@@ -315,6 +310,11 @@ compile =
     . foldl' compileFunc (uncurry Compiler $ entryPoint "main" 0)
 
 weightInst :: Inst -> Int
+weightInst (InstPush _) = 2
+weightInst (InstCopy _) = 2
+weightInst (InstStore _) = 2
+weightInst (InstDrop _) = 2
+weightInst (InstRsrv _) = 2
 weightInst (PreInstLabelPush _) = 2
 weightInst (PreInstLabelSet _) = 0
 weightInst _ = 1
@@ -330,7 +330,7 @@ resolve :: [Inst] -> Map String Int -> [Inst]
 resolve [] _ = []
 resolve (PreInstLabelSet _ : xs) m = resolve xs m
 resolve (PreInstLabelPush x : xs) m =
-  [InstPush, InstLitInt (m ! x)] ++ resolve xs m
+  InstPush (m ! x) : resolve xs m
 resolve (x : xs) m = x : resolve xs m
 
 assemble :: [Inst] -> [Inst]
