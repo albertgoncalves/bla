@@ -249,7 +249,7 @@ static Program read_program(const char* path) {
     EXIT_IF(file < 0);
     FileStat stat;
     EXIT_IF(fstat(file, &stat) < 0)
-    Program program   = {};
+    Program program;
     program.insts_len = static_cast<u32>(stat.st_size) / sizeof(u32);
     {
         void* address = mmap(null,
