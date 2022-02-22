@@ -85,6 +85,7 @@ static void inst_store(Program program, Thread* thread) {
     Node node = thread->stack.nodes[--thread->stack.top];
     EXIT_IF(program.insts_len < thread->insts_index);
     u32 offset = program.insts[thread->insts_index++];
+    EXIT_IF(thread->stack.top == 0);
     EXIT_IF((thread->stack.top - 1) < offset);
     thread->stack.nodes[(thread->stack.top - 1) - offset].as_u32 = node.as_u32;
 }
