@@ -270,7 +270,7 @@ i32 main(i32 n, const char** args) {
         fprintf(stderr,
                 "$ %s path/to/bytecode.blc\n",
                 realpath(args[0], null));
-        _exit(EXIT_SUCCESS);
+        _exit(ERROR);
     }
     EXIT_IF(n < 2);
     Memory* memory  = alloc_memory();
@@ -280,5 +280,5 @@ i32 main(i32 n, const char** args) {
         step(memory->program, thread);
     }
     EXIT_IF(thread->stack.top != 0);
-    return EXIT_SUCCESS;
+    return OK;
 }

@@ -12,19 +12,19 @@ typedef uint32_t u32;
 typedef FILE        File;
 typedef struct stat FileStat;
 
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
+#define OK    0
+#define ERROR 1
 
 #define EXIT()                                                       \
     {                                                                \
         fprintf(stderr, "%s:%s:%d\n", __FILE__, __func__, __LINE__); \
-        _exit(EXIT_FAILURE);                                         \
+        _exit(ERROR);                                                \
     }
 
 #define EXIT_WITH(x)                                                         \
     {                                                                        \
         fprintf(stderr, "%s:%s:%d `%s`\n", __FILE__, __func__, __LINE__, x); \
-        _exit(EXIT_FAILURE);                                                 \
+        _exit(ERROR);                                                        \
     }
 
 #define EXIT_IF(condition)     \
