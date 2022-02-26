@@ -64,7 +64,7 @@ static void inst_halt(Thread* thread) {
 }
 
 static void inst_push(Program program, Thread* thread) {
-    EXIT_IF(program.insts_len < thread->insts_index);
+    EXIT_IF(program.insts_len <= thread->insts_index);
     u32 value = program.insts[thread->insts_index++];
     EXIT_IF(CAP_STACK <= thread->stack.top);
     thread->stack.nodes[thread->stack.top++].as_u32 = value;
@@ -72,7 +72,7 @@ static void inst_push(Program program, Thread* thread) {
 
 static void inst_copy(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
-    EXIT_IF(program.insts_len < thread->insts_index);
+    EXIT_IF(program.insts_len <= thread->insts_index);
     u32 offset = program.insts[thread->insts_index++];
     EXIT_IF((thread->stack.top - 1) < offset);
     Node node = thread->stack.nodes[(thread->stack.top - 1) - offset];
@@ -83,7 +83,7 @@ static void inst_copy(Program program, Thread* thread) {
 static void inst_store(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     Node node = thread->stack.nodes[--thread->stack.top];
-    EXIT_IF(program.insts_len < thread->insts_index);
+    EXIT_IF(program.insts_len <= thread->insts_index);
     u32 offset = program.insts[thread->insts_index++];
     EXIT_IF(thread->stack.top == 0);
     EXIT_IF((thread->stack.top - 1) < offset);
@@ -91,7 +91,7 @@ static void inst_store(Program program, Thread* thread) {
 }
 
 static void inst_drop(Program program, Thread* thread) {
-    EXIT_IF(program.insts_len < thread->insts_index);
+    EXIT_IF(program.insts_len <= thread->insts_index);
     u32 n = program.insts[thread->insts_index++];
     EXIT_IF(n == 0);
     EXIT_IF(thread->stack.top < n);
@@ -99,7 +99,7 @@ static void inst_drop(Program program, Thread* thread) {
 }
 
 static void inst_rsrv(Program program, Thread* thread) {
-    EXIT_IF(program.insts_len < thread->insts_index);
+    EXIT_IF(program.insts_len <= thread->insts_index);
     u32 n = program.insts[thread->insts_index++];
     EXIT_IF(n == 0);
     thread->stack.top += n;
@@ -164,7 +164,7 @@ static void inst_pri32(Thread* thread) {
 }
 
 static void step(Program program, Thread* thread) {
-    EXIT_IF(program.insts_len < thread->insts_index);
+    EXIT_IF(program.insts_len <= thread->insts_index);
     switch (static_cast<Inst>(program.insts[thread->insts_index++])) {
     case INST_HALT: {
         return inst_halt(thread);
