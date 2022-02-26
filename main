@@ -63,5 +63,5 @@ set -euo pipefail
     mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
 )
 (
-    python "$WD/src/test/main.py"
+    python3 "$WD/src/test/main.py"
 )
