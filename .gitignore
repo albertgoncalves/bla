@@ -16,6 +16,9 @@
 !*.hpp
 !*.cpp
 
+!src/test/
+!*.py
+
 !ex/
 !*.bla
 

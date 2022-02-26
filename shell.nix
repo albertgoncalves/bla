@@ -9,6 +9,7 @@ mkShell.override { stdenv = llvmPackages_12.stdenv; } {
         llvmPackages_12.lld
         mold
         ormolu
+        python3Packages.flake8
         shellcheck
     ];
     APPEND_LIBRARY_PATH = lib.makeLibraryPath [

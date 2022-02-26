@@ -63,9 +63,5 @@ set -euo pipefail
     mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
 )
 (
-    for x in "$WD/ex/"*.bla; do
-        echo "$x"
-        x=$(basename "$x" .bla)
-        run "$WD/ex/$x.bla" "$WD/build/$x.blc" || echo $?
-    done
+    python "$WD/src/test/main.py"
 )
