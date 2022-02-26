@@ -26,8 +26,8 @@ enum Inst {
     INST_EQ    = 13,
     INST_NEG   = 14,
     INST_NOT   = 15,
-    INST_PRCH  = 16,
-    INST_PRI32 = 17,
+    INST_PRCH  = 100,
+    INST_PRI32 = 101,
 };
 
 STATIC_ASSERT(sizeof(Inst) <= sizeof(u32));

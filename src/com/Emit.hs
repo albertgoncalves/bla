@@ -22,8 +22,8 @@ toInt InstDiv = [12]
 toInt InstEq = [13]
 toInt InstNeg = [14]
 toInt InstNot = [15]
-toInt InstPrCh = [16]
-toInt InstPrI32 = [17]
+toInt InstPrCh = [100]
+toInt InstPrI32 = [101]
 toInt (PreInstLabelSet _) = undefined
 toInt (PreInstLabelPush _) = undefined
 
