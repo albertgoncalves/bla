@@ -16,10 +16,10 @@ set -euo pipefail
 )
 (
     flags=(
-        -dynamic
         "-fdiagnostics-color=always"
         -funbox-strict-fields
         "-i$WD/src/com"
+        -O
         "-optl -fuse-ld=lld"
         "-outputdir $WD/build"
         -Wall
