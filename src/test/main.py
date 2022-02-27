@@ -3,6 +3,8 @@
 from unittest import main, TestCase
 from subprocess import run
 
+__unittest = True
+
 
 class Tests(TestCase):
     def into_test(self, file, expected_code, expected_stdout, expected_stderr):
