@@ -20,6 +20,7 @@ data AstExpr
   | AstExprBinOp Pos AstExpr BinOp AstExpr
   | AstExprCall Pos AstExpr [AstExpr]
   | AstExprAs Pos AstExpr AstType
+  | AstExprRead Pos AstExpr AstExpr
 
 data AstStmt
   = AstStmtAssign Pos String AstExpr
@@ -30,6 +31,7 @@ data AstStmt
   | AstStmtRet Pos (Maybe AstExpr)
   | AstStmtDiscard Pos AstExpr
   | AstStmtEffect Pos AstExpr
+  | AstStmtSave Pos AstExpr AstExpr AstExpr
 
 data AstType
   = AstTypeI32 Pos

@@ -165,6 +165,10 @@ expr =
       call,
       AstExprInt <$> position <*> integer,
       exprIdent,
+      AstExprRead
+        <$> position
+        <*> (token (char '[') *> expr)
+        <*> (token (char ',') *> expr <* token (char ']')),
       parens
         (AstExprAs <$> position <*> (expr <* token (string "as")) <*> type'),
       parens expr
@@ -190,7 +194,12 @@ statement =
       AstStmtDiscard
         <$> position
         <*> (token (char '_') *> token (char '=') *> expr <* semicolon),
-      AstStmtEffect <$> position <*> (parens expr <* semicolon)
+      AstStmtEffect <$> position <*> (parens expr <* semicolon),
+      AstStmtSave
+        <$> position
+        <*> (token (char '[') *> expr <* token (char ','))
+        <*> (expr <* token (char ']'))
+        <*> (token (char '=') *> expr <* semicolon)
     ]
 
 statements :: Parser [AstStmt]

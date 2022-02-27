@@ -1,0 +1,30 @@
+f0(xs i32) {
+    [xs, 2] = ([xs, 1] / [xs, 0]);
+    return;
+}
+
+main() {
+    _ = @alloc_heap(3);
+    xs = @alloc_heap(4);
+    loop {
+        if 1 {
+            [xs, 0] = (-123 * -2);
+            [xs, 1] = (4920 / 10);
+            (f0(xs));
+            [xs, 3] = (-[xs, 2]);
+            (f1(xs));
+            break 0;
+        }
+    }
+    return;
+}
+
+f1(xs i32) {
+    (@print_i32([xs, 3]));
+    (@print_char(10));
+    (@print_i32(xs));
+    (@print_char(10));
+    (@print_i32(@alloc_heap(1)));
+    (@print_char(10));
+    return;
+}

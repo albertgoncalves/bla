@@ -22,6 +22,9 @@ data Inst
   | InstEq
   | InstNeg
   | InstNot
+  | InstAlloc
+  | InstSave
+  | InstRead
   | InstPrCh
   | InstPrI32
   | PreInstLabelSet String
@@ -128,6 +131,8 @@ compileExpr context (AstExprBinOp _ l op r) =
 -- NOTE: Even though some functions do not return values, we always augment
 -- the stack here _as if_ that was true. We end up handling this when compiling
 -- `AstStmtEffect` statements below, which blindly decrements the stack offset.
+compileExpr context (AstExprCall _ (AstExprVar _ "@alloc_heap") args) =
+  appendContextInsts (foldl' compileExpr context args) [InstAlloc]
 compileExpr context (AstExprCall _ (AstExprVar _ "@print_char") args) =
   appendContextInsts (foldl' compileExpr context args) [InstPrCh]
 compileExpr context (AstExprCall _ (AstExprVar _ "@print_i32") args) =
@@ -147,6 +152,11 @@ compileExpr context0 (AstExprCall _ expr args) =
         args
     context2 = compileExpr context1 expr
 compileExpr context (AstExprAs _ expr _) = compileExpr context expr
+compileExpr context (AstExprRead _ base offset) =
+  decrStackOffset $
+    appendContextInsts
+      (compileExpr (compileExpr context base) offset)
+      [InstRead]
 
 compileStmt :: Context -> AstStmt -> Context
 compileStmt context (AstStmtAssign _ name expr) =
@@ -225,6 +235,11 @@ compileStmt context (AstStmtDiscard _ expr) =
 -- be found here.
 compileStmt context (AstStmtEffect _ expr) =
   decrStackOffset $ compileExpr context expr
+compileStmt context (AstStmtSave _ base offset expr) =
+  appendContextInsts
+    (compileExpr (compileExpr (compileExpr context expr) base) offset)
+    [InstSave]
+    `setStackOffset` getContextStackOffset context
 
 appendCompilerInsts :: Compiler -> [Inst] -> Compiler
 appendCompilerInsts (Compiler labelCount insts0) insts1 =

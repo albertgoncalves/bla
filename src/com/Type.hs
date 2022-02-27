@@ -18,6 +18,7 @@ getPos (AstExprUnOp pos _ _) = pos
 getPos (AstExprBinOp pos _ _ _) = pos
 getPos (AstExprCall pos _ _) = pos
 getPos (AstExprAs pos _ _) = pos
+getPos (AstExprRead pos _ _) = pos
 
 typeError :: Pos -> (String, Pos)
 typeError = (,) "type"
@@ -61,6 +62,15 @@ toType sigs vars (AstExprCall _ expr args) = do
             else Left $ typeError $ getPos expr
         Left e -> Left e
     Right _ -> Left $ typeError $ getPos expr
+    l@(Left _) -> l
+toType sigs vars (AstExprRead pos base offset) =
+  case toType sigs vars base of
+    Right (Just (AstTypeI32 _)) ->
+      case toType sigs vars offset of
+        Right (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
+        Right _ -> Left $ typeError $ getPos offset
+        l@(Left _) -> l
+    Right _ -> Left $ typeError $ getPos base
     l@(Left _) -> l
 
 checkStmt ::
@@ -116,6 +126,19 @@ checkStmt sigs _ _ vars (AstStmtEffect _ expr) =
     Right Nothing -> Right vars
     Right _ -> Left $ typeError $ getPos expr
     Left e -> Left e
+checkStmt sigs _ _ vars (AstStmtSave _ base offset expr) =
+  case toType sigs vars base of
+    Right (Just (AstTypeI32 _)) ->
+      case toType sigs vars offset of
+        Right (Just (AstTypeI32 _)) ->
+          case toType sigs vars expr of
+            Right (Just (AstTypeI32 _)) -> Right vars
+            Right _ -> Left $ typeError $ getPos expr
+            Left e -> Left e
+        Right _ -> Left $ typeError $ getPos offset
+        Left e -> Left e
+    Right _ -> Left $ typeError $ getPos base
+    Left e -> Left e
 
 checkFunc :: Map String Sig -> AstPreFunc -> Either (String, Pos) AstPreFunc
 checkFunc sigs func =
@@ -131,7 +154,8 @@ toSig (AstPreFunc pos name args returnType _) =
 
 intrinsics :: [(String, Sig)]
 intrinsics =
-  [ ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
+  [ ("@alloc_heap", Sig 0 [AstTypeI32 0] $ Just $ AstTypeI32 0),
+    ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
     ("@print_i32", Sig 0 [AstTypeI32 0] Nothing)
   ]
 

@@ -38,6 +38,9 @@ class Tests(TestCase):
     def test_function_pointers(self):
         self.into_test("function_pointers", 0, "-990\n", "")
 
+    def test_heap(self):
+        self.into_test("heap", 0, "-2\n3\n7\n", "")
+
     def test_nested_calls(self):
         self.into_test("nested_calls", 0, "-234\n", "")
 

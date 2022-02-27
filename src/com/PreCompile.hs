@@ -18,6 +18,7 @@ getPos (AstStmtCont pos _) = pos
 getPos (AstStmtRet pos _) = pos
 getPos (AstStmtDiscard pos _) = pos
 getPos (AstStmtEffect pos _) = pos
+getPos (AstStmtSave pos _ _ _) = pos
 
 getAssigns :: [AstStmt] -> [String]
 getAssigns [] = []

@@ -8,6 +8,7 @@
 
 #define CAP_STACK   (1 << 10)
 #define CAP_THREADS 1
+#define CAP_HEAP    (1 << 11)
 
 enum Inst {
     INST_HALT  = 0,
@@ -26,6 +27,9 @@ enum Inst {
     INST_EQ    = 13,
     INST_NEG   = 14,
     INST_NOT   = 15,
+    INST_ALLOC = 16,
+    INST_SAVE  = 17,
+    INST_READ  = 18,
     INST_PRCH  = 100,
     INST_PRI32 = 101,
 };
@@ -42,6 +46,11 @@ struct Stack {
     u32  top;
 };
 
+struct Heap {
+    u32 buffer[CAP_HEAP];
+    u32 len;
+};
+
 struct Thread {
     Stack stack;
     u32   insts_index;
@@ -54,6 +63,7 @@ struct Program {
 };
 
 struct Memory {
+    Heap    heap;
     Thread  threads[CAP_THREADS];
     u32     threads_len;
     Program program;
@@ -153,6 +163,36 @@ INST_BINOP(inst_eq, ==, u32)
 INST_UNOP(inst_neg, -, i32)
 INST_UNOP(inst_not, !, u32)
 
+static void inst_alloc(Thread* thread, Heap* heap) {
+    EXIT_IF(CAP_HEAP <= heap->len);
+    EXIT_IF(thread->stack.top == 0);
+    u32 n = thread->stack.nodes[--thread->stack.top].as_u32;
+    EXIT_IF(n == 0);
+    thread->stack.nodes[thread->stack.top++].as_u32 = heap->len;
+    EXIT_IF(CAP_HEAP < (heap->len + n));
+    heap->len += n;
+}
+
+static void inst_save(Thread* thread, Heap* heap) {
+    EXIT_IF(thread->stack.top < 3);
+    i32 offset     = thread->stack.nodes[--thread->stack.top].as_i32;
+    i32 base       = thread->stack.nodes[--thread->stack.top].as_i32;
+    i32 heap_index = base + offset;
+    EXIT_IF(heap_index < 0);
+    EXIT_IF(CAP_HEAP <= heap_index);
+    heap->buffer[heap_index] = thread->stack.nodes[--thread->stack.top].as_u32;
+}
+
+static void inst_read(Thread* thread, Heap* heap) {
+    EXIT_IF(thread->stack.top < 2);
+    i32 offset     = thread->stack.nodes[--thread->stack.top].as_i32;
+    i32 base       = thread->stack.nodes[--thread->stack.top].as_i32;
+    i32 heap_index = base + offset;
+    EXIT_IF(heap_index < 0);
+    EXIT_IF(CAP_HEAP <= heap_index);
+    thread->stack.nodes[thread->stack.top++].as_u32 = heap->buffer[heap_index];
+}
+
 static void inst_prch(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     putchar(thread->stack.nodes[--thread->stack.top].as_i32);
@@ -163,7 +203,7 @@ static void inst_pri32(Thread* thread) {
     printf("%d", thread->stack.nodes[--thread->stack.top].as_i32);
 }
 
-static void step(Program program, Thread* thread) {
+static void step(Program program, Thread* thread, Heap* heap) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     switch (static_cast<Inst>(program.insts[thread->insts_index++])) {
     case INST_HALT: {
@@ -213,6 +253,15 @@ static void step(Program program, Thread* thread) {
     }
     case INST_NOT: {
         return inst_not(thread);
+    }
+    case INST_ALLOC: {
+        return inst_alloc(thread, heap);
+    }
+    case INST_SAVE: {
+        return inst_save(thread, heap);
+    }
+    case INST_READ: {
+        return inst_read(thread, heap);
     }
     case INST_PRCH: {
         return inst_prch(thread);
@@ -277,7 +326,7 @@ i32 main(i32 n, const char** args) {
     Thread* thread  = alloc_thread(memory);
     memory->program = read_program(args[1]);
     while (thread->alive) {
-        step(memory->program, thread);
+        step(memory->program, thread, &memory->heap);
     }
     EXIT_IF(thread->stack.top != 0);
     return OK;
