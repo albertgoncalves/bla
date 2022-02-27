@@ -85,7 +85,8 @@ checkStmt sigs depth returnType vars (AstStmtIf _ expr body) =
   case toType sigs vars expr of
     Right (Just (AstTypeI32 _)) ->
       foldM (checkStmt sigs depth returnType) vars body
-    _ -> Left $ typeError $ getPos expr
+    Right _ -> Left $ typeError $ getPos expr
+    Left e -> Left e
 checkStmt sigs depth returnType vars (AstStmtLoop _ body) =
   foldM (checkStmt sigs (depth + 1) returnType) vars body
 checkStmt _ depth _ vars (AstStmtBreak pos n)
