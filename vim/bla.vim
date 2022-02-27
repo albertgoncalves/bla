@@ -23,6 +23,7 @@ syn keyword Statement
     \ continue
     \ return
 syn keyword Type
+    \ addr
     \ fn
     \ i32
 

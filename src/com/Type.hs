@@ -65,7 +65,7 @@ toType sigs vars (AstExprCall _ expr args) = do
     l@(Left _) -> l
 toType sigs vars (AstExprRead pos base offset) =
   case toType sigs vars base of
-    Right (Just (AstTypeI32 _)) ->
+    Right (Just (AstTypeAddr _)) ->
       case toType sigs vars offset of
         Right (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
         Right _ -> Left $ typeError $ getPos offset
@@ -128,7 +128,7 @@ checkStmt sigs _ _ vars (AstStmtEffect _ expr) =
     Left e -> Left e
 checkStmt sigs _ _ vars (AstStmtSave _ base offset expr) =
   case toType sigs vars base of
-    Right (Just (AstTypeI32 _)) ->
+    Right (Just (AstTypeAddr _)) ->
       case toType sigs vars offset of
         Right (Just (AstTypeI32 _)) ->
           case toType sigs vars expr of
@@ -154,7 +154,7 @@ toSig (AstPreFunc pos name args returnType _) =
 
 intrinsics :: [(String, Sig)]
 intrinsics =
-  [ ("@alloc_heap", Sig 0 [AstTypeI32 0] $ Just $ AstTypeI32 0),
+  [ ("@alloc_heap", Sig 0 [AstTypeI32 0] $ Just $ AstTypeAddr 0),
     ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
     ("@print_i32", Sig 0 [AstTypeI32 0] Nothing)
   ]

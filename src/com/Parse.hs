@@ -210,6 +210,7 @@ type' =
   foldr1
     (<|>)
     [ AstTypeI32 <$> position <* token (string "i32"),
+      AstTypeAddr <$> position <* token (string "addr"),
       AstTypeFunc
         <$> (position <* token (string "fn") <* token (char '('))
         <*> (sepBy type' comma <* token (char ')'))
