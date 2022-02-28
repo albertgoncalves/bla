@@ -17,12 +17,14 @@ typedef struct stat FileStat;
 
 #define EXIT()                                                       \
     {                                                                \
+        fflush(stdout);                                              \
         fprintf(stderr, "%s:%s:%d\n", __FILE__, __func__, __LINE__); \
         _exit(ERROR);                                                \
     }
 
 #define EXIT_WITH(x)                                                         \
     {                                                                        \
+        fflush(stdout);                                                      \
         fprintf(stderr, "%s:%s:%d `%s`\n", __FILE__, __func__, __LINE__, x); \
         _exit(ERROR);                                                        \
     }
