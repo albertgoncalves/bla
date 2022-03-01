@@ -29,6 +29,9 @@ class Tests(TestCase):
     def test_effect(self):
         self.into_test("effect", 0, "-123\n", "")
 
+    def test_fib_lazy(self):
+        self.into_test("fib_lazy", 0, "1836311903\n", "")
+
     def test_fib_loop(self):
         self.into_test("fib_loop", 0, "1836311903\n", "")
 

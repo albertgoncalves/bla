@@ -1,0 +1,83 @@
+lazy_new(f fn(addr) -> addr, x addr) :: addr {
+    l = @alloc_heap(4);
+    [l, 0] = 0;             # cached
+    [l, 1] = 0;             # result
+    [l, 2] = (f as i32);    # func
+    [l, 3] = (x as i32);    # args
+    return l;
+}
+
+lazy_force(l addr) :: addr {
+    if (![l, 0]) {                          # if !cached { ...
+        f = ([l, 2] as fn(addr) -> addr);
+        x = ([l, 3] as addr);
+        [l, 1] = (f(x) as i32);
+        [l, 0] = 1;                         # cached = true
+    }
+    return ([l, 1] as addr);
+}
+
+list_set(l addr, i i32, f fn(addr) -> addr, x addr) {
+    [l, 0] = i;                         # head
+    [l, 1] = (lazy_new(f, x) as i32);   # tail
+    return;
+}
+
+list_new(i i32, f fn(addr) -> addr, x addr) :: addr {
+    l = @alloc_heap(2);
+    (list_set(l, i, f, x));
+    return l;
+}
+
+list_head(l addr) :: i32 {
+    return [l, 0];
+}
+
+list_tail(l addr) :: addr {
+    return lazy_force(([l, 1] as addr));
+}
+
+list_drop(l addr, n i32) :: addr {
+    loop {
+        if (n == 0) {
+            break 0;
+        }
+        l = list_tail(l);
+        n = (n - 1);
+    }
+    return l;
+}
+
+f0(x addr) :: addr {
+    return list_new(1, f1, x);
+}
+
+f1(x addr) :: addr {
+    return zip1(x, list_tail(x));
+}
+
+zip0(x addr) :: addr {
+    a = list_tail(([x, 0] as addr));
+    b = list_tail(([x, 1] as addr));
+    return zip1(a, b);
+}
+
+zip1(a addr, b addr) :: addr {
+    x = @alloc_heap(2);
+    [x, 0] = (a as i32);
+    [x, 1] = (b as i32);
+    return list_new((list_head(a) + list_head(b)), zip0, x);
+}
+
+println_i32(x i32) {
+    (@print_i32(x));
+    (@print_char(10));
+    return;
+}
+
+main() {
+    fibs = @alloc_heap(2);
+    (list_set(fibs, 0, f0, fibs));
+    (println_i32(list_head(list_drop(fibs, 46))));
+    return;
+}
