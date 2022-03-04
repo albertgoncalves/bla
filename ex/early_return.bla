@@ -1,0 +1,17 @@
+println_i32(x i32) {
+    (@print_i32(x));
+    (@print_char(10));
+    return;
+}
+
+main() {
+    x = 0;
+    if (!(x == 1)) {
+        (println_i32(1));
+        return;
+    }
+    loop {
+        (println_i32(x));
+    }
+    return;
+}

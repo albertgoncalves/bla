@@ -26,6 +26,9 @@ class Tests(TestCase):
     def test_div(self):
         self.into_test("div", 0, "21\n", "")
 
+    def test_early_return(self):
+        self.into_test("early_return", 0, "1\n", "")
+
     def test_effect(self):
         self.into_test("effect", 0, "-123\n", "")
 
