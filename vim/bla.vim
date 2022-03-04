@@ -9,7 +9,7 @@ endif
 syn match Comment   "#.*$"
 syn match Operator  "[(){}[\]:;@=!<>,+\-*/]"
 syn match Number    "\<[0-9]\+\>"
-syn match Function  "[A-Za-z][A-Za-z0-9_]*("me=e-1
+syn match Function  "[a-z][A-Za-z0-9_]*("me=e-1
 
 " NOTE: See `http://vimdoc.sourceforge.net/htmldoc/syntax.html`.
 syn keyword Conditional
