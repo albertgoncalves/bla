@@ -71,7 +71,7 @@ class Tests(TestCase):
             "type_error",
             1,
             "",
-            "  ex/type_error.bla:12:17 [ type error ]\n",
+            "  ex/type_error.bla:12:16 [ type error ]\n",
         )
 
 

@@ -9,7 +9,7 @@ f1(x i32) {
 
 main() {
     x = 0;
-    (@print_i32(f0(f1(x))));
-    (@print_char(10));
+    @print_i32(f0(f1(x)));
+    @print_char(10);
     return;
 }

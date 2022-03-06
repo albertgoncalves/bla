@@ -35,8 +35,8 @@ lazy_get_args(l addr) :: addr {
 
 lazy_force(l addr) :: addr {
     if (!lazy_get_cached(l)) {
-        (lazy_set_result(l, (lazy_get_func(l))(lazy_get_args(l))));
-        (lazy_set_cached(l, 1));
+        lazy_set_result(l, (lazy_get_func(l))(lazy_get_args(l)));
+        lazy_set_cached(l, 1);
     }
     return ([l, 1] as addr);
 }
@@ -49,7 +49,7 @@ list_set(l addr, i i32, f fn(addr) -> addr, x addr) {
 
 list_new(i i32, f fn(addr) -> addr, x addr) :: addr {
     l = @alloc_heap(2);
-    (list_set(l, i, f, x));
+    list_set(l, i, f, x);
     return l;
 }
 
@@ -94,14 +94,14 @@ zip1(a addr, b addr) :: addr {
 }
 
 println_i32(x i32) {
-    (@print_i32(x));
-    (@print_char(10));
+    @print_i32(x);
+    @print_char(10);
     return;
 }
 
 main() {
     fibs = @alloc_heap(2);
-    (list_set(fibs, 0, f0, fibs));
-    (println_i32(list_get_head(list_drop(fibs, 46))));
+    list_set(fibs, 0, f0, fibs);
+    println_i32(list_get_head(list_drop(fibs, 46)));
     return;
 }

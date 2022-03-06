@@ -9,7 +9,7 @@ fib(n i32) :: i32 {
 }
 
 main() {
-    (@print_i32(fib(10)));
-    (@print_char(10));
+    @print_i32(fib(10));
+    @print_char(10);
     return;
 }

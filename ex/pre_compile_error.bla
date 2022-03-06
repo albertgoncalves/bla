@@ -5,7 +5,7 @@ f() :: i32 {
 }
 
 main() {
-    (@print_i32(f()));
-    (@print_char(10));
+    @print_i32(f());
+    @print_char(10);
     return;
 }

@@ -15,6 +15,7 @@ import Control.Applicative (Alternative (..), optional)
 import Data.Bifunctor (first)
 import Data.Char (isAlphaNum, isDigit, isLower, isSpace)
 import Data.Maybe (fromMaybe)
+import Prelude hiding (fail)
 
 type Source = String
 
@@ -62,6 +63,12 @@ instance Alternative Parser where
           _ -> l1
       Left (False, _) -> p1 input
 
+instance Monad Parser where
+  Parser p >>= f = Parser $ \input0 -> do
+    case p input0 of
+      Right (_, (input1, x)) -> runParser (f x) input1
+      Left e -> Left e
+
 sepBy :: Parser b -> Parser c -> Parser [b]
 sepBy p0 p1 = ((:) <$> p0 <*> many (p1 *> p0)) <|> pure []
 
@@ -69,6 +76,9 @@ end :: Parser ()
 end = Parser $ \case
   [] -> Right (False, ([], ()))
   input -> Left (False, Just $ length input)
+
+fail :: Parser a
+fail = Parser $ \input -> Left (False, Just $ length input)
 
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy f = Parser $ \case
@@ -117,9 +127,18 @@ digits = token $ some $ satisfy isDigit
 integer :: Parser Int
 integer = read <$> digits <|> ((read .) . (:) <$> char '-' <*> digits)
 
+reserved :: [String]
+reserved =
+  ["if", "loop", "break", "continue", "return", "as", "addr", "fn", "i32"]
+
 ident :: Parser String
-ident =
-  token $ (:) <$> satisfy isLower <*> many (satisfy isAlphaNum <|> char '_')
+ident = do
+  xs <-
+    token $
+      (:) <$> satisfy isLower <*> many (satisfy isAlphaNum <|> char '_')
+  if xs `elem` reserved
+    then fail
+    else return xs
 
 unOp :: Parser AstExpr
 unOp = parens (foldr1 (<|>) (map f [(UnOpBang, '!'), (UnOpMinus, '-')]))
@@ -153,32 +172,33 @@ call :: Parser AstExpr
 call =
   AstExprCall
     <$> position
-    <*> (exprIdent <|> parens expr <|> intrinsic)
+    <*> (parens expr <|> exprIdent <|> intrinsic)
     <*> parens (sepBy expr comma)
 
 expr :: Parser AstExpr
 expr =
   foldr1
     (<|>)
-    [ unOp,
-      binOp,
-      call,
+    [ call,
+      parens expr,
       AstExprInt <$> position <*> integer,
-      exprIdent,
+      binOp,
+      unOp,
       AstExprRead
         <$> position
         <*> (token (char '[') *> expr)
         <*> (token (char ',') *> expr <* token (char ']')),
       parens
         (AstExprAs <$> position <*> (expr <* token (string "as")) <*> type'),
-      parens expr
+      exprIdent
     ]
 
 statement :: Parser AstStmt
 statement =
   foldr1
     (<|>)
-    [ AstStmtIf
+    [ AstStmtEffect <$> position <*> (expr <* semicolon),
+      AstStmtIf
         <$> position <*> (token (string "if") *> expr) <*> braces statements,
       AstStmtLoop
         <$> position <*> (token (string "loop") *> braces statements),
@@ -194,7 +214,6 @@ statement =
       AstStmtDiscard
         <$> position
         <*> (token (char '_') *> token (char '=') *> expr <* semicolon),
-      AstStmtEffect <$> position <*> (parens expr <* semicolon),
       AstStmtSave
         <$> position
         <*> (token (char '[') *> expr <* token (char ','))

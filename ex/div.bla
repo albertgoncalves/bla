@@ -1,5 +1,5 @@
 main() {
-    (f(-2));
+    f(-2);
     return;
 }
 
@@ -8,9 +8,9 @@ f(x i32) {
     loop {
         loop {
             if (x == 21) {
-                (@print_i32(x));
+                @print_i32(x);
                 x = 10;
-                (@print_char(x));
+                @print_char(x);
                 break 1;
             }
         }

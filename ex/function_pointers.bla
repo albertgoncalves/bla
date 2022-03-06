@@ -3,14 +3,14 @@ main() {
     x = 10;
     y = x;
     g = f(y);
-    (@print_i32((x * g(-987, 10))));
-    (@print_char(10));
+    @print_i32((x * g(-987, 10)));
+    @print_char(10);
     return;
 }
 
 f2() :: fn(i32) -> fn(i32, i32) -> i32 {
     x = 0;
-    (f3(x));
+    f3(x);
     return f1;
 }
 

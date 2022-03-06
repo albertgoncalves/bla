@@ -7,7 +7,7 @@ f(x i32) :: i32 {
 
 main() {
     _ = f(0);
-    (@print_i32(f(1)));
-    (@print_char(10));
+    @print_i32(f(1));
+    @print_char(10);
     return;
 }
