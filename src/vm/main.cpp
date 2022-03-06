@@ -6,9 +6,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define CAP_STACK   (1 << 10)
+#define CAP_STACK   (1 << 12)
 #define CAP_THREADS 1
-#define CAP_HEAP    (1 << 11)
+#define CAP_HEAP    (1 << 9)
 
 enum Inst {
     INST_HALT  = 0,

@@ -17,6 +17,14 @@ class Tests(TestCase):
         self.assertEqual(result.stdout.decode(), expected_stdout)
         self.assertEqual(result.stderr.decode(), expected_stderr)
 
+    def test_ackermann_peter(self):
+        self.into_test(
+            "ackermann_peter",
+            0,
+            "5 13 29 61 125 253 509\n",
+            "",
+        )
+
     def test_as(self):
         self.into_test("as", 0, "-567\n", "")
 
