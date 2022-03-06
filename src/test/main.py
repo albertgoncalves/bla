@@ -50,6 +50,14 @@ class Tests(TestCase):
     def test_nested_calls(self):
         self.into_test("nested_calls", 0, "-234\n", "")
 
+    def test_nested_parse_error(self):
+        self.into_test(
+            "nested_parse_error",
+            1,
+            "",
+            "  ex/nested_parse_error.bla:25:18 [ parse error ]\n",
+        )
+
     def test_parse_error(self):
         self.into_test(
             "parse_error",
