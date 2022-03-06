@@ -109,9 +109,6 @@ parens p = token (char '(') *> p <* token (char ')')
 braces :: Parser a -> Parser a
 braces p = token (char '{') *> p <* token (char '}')
 
-brackets :: Parser a -> Parser a
-brackets p = token (char '[') *> p <* token (char ']')
-
 semicolon :: Parser ()
 semicolon = () <$ token (char ';')
 

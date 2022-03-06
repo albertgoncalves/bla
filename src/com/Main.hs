@@ -1,5 +1,3 @@
-module Main where
-
 import Ast (Pos)
 import Compile (assemble, compile)
 import Data.Tuple (swap)
@@ -23,10 +21,6 @@ getRowCol source pos =
 showError :: FilePath -> Source -> Pos -> String -> String
 showError path =
   (uncurry (printf "  %s:%d:%d [ %s error ]" path) .) . getRowCol
-
-validate :: [a] -> [a]
-validate xs@[_] = xs
-validate _ = undefined
 
 main :: IO ()
 main = do
