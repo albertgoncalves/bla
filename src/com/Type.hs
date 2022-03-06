@@ -38,40 +38,38 @@ toType sigs vars (AstExprVar pos ident) =
         Just (Sig _ argTypes returnType) ->
           Right $ Just $ AstTypeFunc pos argTypes returnType
         Nothing -> Left $ typeError pos
-toType sigs vars (AstExprUnOp pos _ expr) =
-  case toType sigs vars expr of
-    Right (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
-    Right _ -> Left $ typeError $ getPos expr
-    l@(Left _) -> l
-toType sigs vars (AstExprBinOp pos left _ right) =
-  case toType sigs vars left of
-    Right (Just (AstTypeI32 _)) ->
-      case toType sigs vars right of
-        Right (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
-        Right _ -> Left $ typeError $ getPos right
-        l@(Left _) -> l
-    Right _ -> Left $ typeError $ getPos left
-    l@(Left _) -> l
+toType sigs vars (AstExprUnOp pos _ expr) = do
+  r <- toType sigs vars expr
+  case r of
+    (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
+    _ -> Left $ typeError $ getPos expr
+toType sigs vars (AstExprBinOp pos left _ right) = do
+  r0 <- toType sigs vars left
+  case r0 of
+    (Just (AstTypeI32 _)) -> do
+      r1 <- toType sigs vars right
+      case r1 of
+        (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
+        _ -> Left $ typeError $ getPos right
+    _ -> Left $ typeError $ getPos left
 toType sigs vars (AstExprCall _ expr args) = do
-  case toType sigs vars expr of
-    Right (Just (AstTypeFunc _ expectedArgTypes returnType)) ->
-      case mapM (toType sigs vars) args of
-        Right actualArgTypes ->
-          if map Just expectedArgTypes == actualArgTypes
-            then Right returnType
-            else Left $ typeError $ getPos expr
-        Left e -> Left e
-    Right _ -> Left $ typeError $ getPos expr
-    l@(Left _) -> l
-toType sigs vars (AstExprRead pos base offset) =
-  case toType sigs vars base of
-    Right (Just (AstTypeAddr _)) ->
-      case toType sigs vars offset of
-        Right (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
-        Right _ -> Left $ typeError $ getPos offset
-        l@(Left _) -> l
-    Right _ -> Left $ typeError $ getPos base
-    l@(Left _) -> l
+  r <- toType sigs vars expr
+  case r of
+    (Just (AstTypeFunc _ expectedArgTypes returnType)) -> do
+      actualArgTypes <- mapM (toType sigs vars) args
+      if map Just expectedArgTypes == actualArgTypes
+        then Right returnType
+        else Left $ typeError $ getPos expr
+    _ -> Left $ typeError $ getPos expr
+toType sigs vars (AstExprRead pos base offset) = do
+  r0 <- toType sigs vars base
+  case r0 of
+    (Just (AstTypeAddr _)) -> do
+      r1 <- toType sigs vars offset
+      case r1 of
+        (Just (AstTypeI32 _)) -> Right $ Just $ AstTypeI32 pos
+        _ -> Left $ typeError $ getPos offset
+    _ -> Left $ typeError $ getPos base
 
 checkStmt ::
   Map String Sig ->
@@ -80,23 +78,23 @@ checkStmt ::
   Map String AstType ->
   AstStmt ->
   Either (String, Pos) (Map String AstType)
-checkStmt sigs _ _ vars (AstStmtAssign _ ident expr) =
-  case toType sigs vars expr of
-    Right (Just rightType) ->
+checkStmt sigs _ _ vars (AstStmtAssign _ ident expr) = do
+  r <- toType sigs vars expr
+  case r of
+    (Just rightType) ->
       case lookup ident vars of
         Just leftType ->
           if leftType == rightType
             then Right vars
             else Left $ typeError $ getPos expr
         Nothing -> Right $ insert ident rightType vars
-    Right Nothing -> Left $ typeError $ getPos expr
-    Left e -> Left e
-checkStmt sigs depth returnType vars (AstStmtIf _ expr body) =
-  case toType sigs vars expr of
-    Right (Just (AstTypeI32 _)) ->
+    Nothing -> Left $ typeError $ getPos expr
+checkStmt sigs depth returnType vars (AstStmtIf _ expr body) = do
+  r <- toType sigs vars expr
+  case r of
+    (Just (AstTypeI32 _)) ->
       foldM (checkStmt sigs depth returnType) vars body
-    Right _ -> Left $ typeError $ getPos expr
-    Left e -> Left e
+    _ -> Left $ typeError $ getPos expr
 checkStmt sigs depth returnType vars (AstStmtLoop _ body) =
   foldM (checkStmt sigs (depth + 1) returnType) vars body
 checkStmt _ depth _ vars (AstStmtBreak pos n)
@@ -105,40 +103,40 @@ checkStmt _ depth _ vars (AstStmtBreak pos n)
 checkStmt _ depth _ vars (AstStmtCont pos n)
   | (0 <= n) && ((n + 1) <= depth) = Right vars
   | otherwise = Left $ typeError pos
-checkStmt sigs _ (Just returnType0) vars (AstStmtRet _ (Just expr)) =
-  case toType sigs vars expr of
-    Right (Just returnType1) ->
+checkStmt sigs _ (Just returnType0) vars (AstStmtRet _ (Just expr)) = do
+  r <- toType sigs vars expr
+  case r of
+    (Just returnType1) ->
       if returnType0 == returnType1
         then Right vars
         else Left $ typeError $ getPos expr
-    Right _ -> Left $ typeError $ getPos expr
-    Left e -> Left e
+    _ -> Left $ typeError $ getPos expr
 checkStmt _ _ Nothing vars (AstStmtRet _ Nothing) = Right vars
 checkStmt _ _ _ _ (AstStmtRet _ (Just expr)) = Left $ typeError $ getPos expr
 checkStmt _ _ _ _ (AstStmtRet pos _) = Left $ typeError pos
-checkStmt sigs _ _ vars (AstStmtDiscard _ expr) =
-  case toType sigs vars expr of
-    Right (Just _) -> Right vars
-    Right _ -> Left $ typeError $ getPos expr
-    Left e -> Left e
-checkStmt sigs _ _ vars (AstStmtEffect _ expr) =
-  case toType sigs vars expr of
-    Right Nothing -> Right vars
-    Right _ -> Left $ typeError $ getPos expr
-    Left e -> Left e
-checkStmt sigs _ _ vars (AstStmtSave _ base offset expr) =
-  case toType sigs vars base of
-    Right (Just (AstTypeAddr _)) ->
-      case toType sigs vars offset of
-        Right (Just (AstTypeI32 _)) ->
-          case toType sigs vars expr of
-            Right (Just (AstTypeI32 _)) -> Right vars
-            Right _ -> Left $ typeError $ getPos expr
-            Left e -> Left e
-        Right _ -> Left $ typeError $ getPos offset
-        Left e -> Left e
-    Right _ -> Left $ typeError $ getPos base
-    Left e -> Left e
+checkStmt sigs _ _ vars (AstStmtDiscard _ expr) = do
+  r <- toType sigs vars expr
+  case r of
+    (Just _) -> Right vars
+    _ -> Left $ typeError $ getPos expr
+checkStmt sigs _ _ vars (AstStmtEffect _ expr) = do
+  r <- toType sigs vars expr
+  case r of
+    Nothing -> Right vars
+    _ -> Left $ typeError $ getPos expr
+checkStmt sigs _ _ vars (AstStmtSave _ base offset expr) = do
+  r0 <- toType sigs vars base
+  case r0 of
+    Just (AstTypeAddr _) -> do
+      r1 <- toType sigs vars offset
+      case r1 of
+        Just (AstTypeI32 _) -> do
+          r2 <- toType sigs vars expr
+          case r2 of
+            Just (AstTypeI32 _) -> Right vars
+            _ -> Left $ typeError $ getPos expr
+        _ -> Left $ typeError $ getPos offset
+    _ -> Left $ typeError $ getPos base
 
 checkFunc :: Map String Sig -> AstPreFunc -> Either (String, Pos) AstPreFunc
 checkFunc sigs func =
