@@ -40,12 +40,9 @@ instance Applicative Parser where
           Left (_, e) -> Left (True, e)
       Right (False, (input1, f)) ->
         case p1 input1 of
-          Right (True, (input2, x)) -> Right (True, (input2, f x))
-          Right (False, (input2, x)) -> Right (False, (input2, f x))
-          Left (True, e) -> Left (True, e)
-          Left (False, e) -> Left (False, e)
-      Left (True, e) -> Left (True, e)
-      Left (False, e) -> Left (False, e)
+          Right (c, (input2, x)) -> Right (c, (input2, f x))
+          Left e -> Left e
+      Left e -> Left e
 
 instance Alternative Parser where
   empty = Parser $ const $ Left (False, Nothing)
