@@ -216,13 +216,13 @@ compileStmt context0 (AstStmtLoop _ body) =
     labelCont = labelFromContext context0 ++ "_continue"
     labelBreak = labelFromContext context1 ++ "_break"
 compileStmt context (AstStmtBreak _ n) =
-  appendContextInsts context [PreInstLabelPush labelBreak, InstJump]
-  where
-    (LabelLoop _ labelBreak) = findLabelLoop n context
+  appendContextInsts
+    context
+    [PreInstLabelPush (getLabelBreak $ findLabelLoop n context), InstJump]
 compileStmt context (AstStmtCont _ n) =
-  appendContextInsts context [PreInstLabelPush labelCont, InstJump]
-  where
-    (LabelLoop labelCont _) = findLabelLoop n context
+  appendContextInsts
+    context
+    [PreInstLabelPush (getLabelCont $ findLabelLoop n context), InstJump]
 compileStmt context (AstStmtDiscard _ expr) =
   decrStackOffset $
     appendContextInsts (compileExpr context expr) [InstDrop 1]
