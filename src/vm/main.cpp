@@ -30,6 +30,7 @@ enum Inst {
     INST_ALLOC = 16,
     INST_SAVE  = 17,
     INST_READ  = 18,
+    INST_HLEN  = 19,
     INST_PRCH  = 100,
     INST_PRI32 = 101,
 };
@@ -193,6 +194,13 @@ static void inst_read(Thread* thread, Heap* heap) {
     thread->stack.nodes[thread->stack.top++].as_u32 = heap->buffer[heap_index];
 }
 
+static void inst_hlen(Thread* thread, Heap* heap) {
+    EXIT_IF(thread->stack.top == 0);
+    u32 heap_len = thread->stack.nodes[--thread->stack.top].as_u32;
+    EXIT_IF(CAP_HEAP < heap_len);
+    heap->len = heap_len;
+}
+
 static void inst_prch(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     putchar(thread->stack.nodes[--thread->stack.top].as_i32);
@@ -262,6 +270,9 @@ static void step(Program program, Thread* thread, Heap* heap) {
     }
     case INST_READ: {
         return inst_read(thread, heap);
+    }
+    case INST_HLEN: {
+        return inst_hlen(thread, heap);
     }
     case INST_PRCH: {
         return inst_prch(thread);

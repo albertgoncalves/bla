@@ -4,6 +4,7 @@ f0(xs addr) {
 }
 
 main() {
+    @set_heap_len(9);
     _ = @alloc_heap(3);
     xs = @alloc_heap(4);
     loop {

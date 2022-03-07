@@ -25,6 +25,7 @@ data Inst
   | InstAlloc
   | InstSave
   | InstRead
+  | InstHlen
   | InstPrCh
   | InstPrI32
   | PreInstLabelSet String
@@ -133,6 +134,8 @@ compileExpr context (AstExprBinOp _ l op r) =
 -- `AstStmtEffect` statements below, which blindly decrements the stack offset.
 compileExpr context (AstExprCall _ (AstExprVar _ "@alloc_heap") args) =
   appendContextInsts (foldl' compileExpr context args) [InstAlloc]
+compileExpr context (AstExprCall _ (AstExprVar _ "@set_heap_len") args) =
+  appendContextInsts (foldl' compileExpr context args) [InstHlen]
 compileExpr context (AstExprCall _ (AstExprVar _ "@print_char") args) =
   appendContextInsts (foldl' compileExpr context args) [InstPrCh]
 compileExpr context (AstExprCall _ (AstExprVar _ "@print_i32") args) =
