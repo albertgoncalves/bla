@@ -109,6 +109,9 @@ parens p = token (char '(') *> p <* token (char ')')
 braces :: Parser a -> Parser a
 braces p = token (char '{') *> p <* token (char '}')
 
+brackets :: Parser a -> Parser a
+brackets p = token (char '[') *> p <* token (char ']')
+
 semicolon :: Parser ()
 semicolon = () <$ token (char ';')
 
@@ -162,11 +165,14 @@ exprIdent = AstExprVar <$> position <*> ident
 intrinsic :: Parser AstExpr
 intrinsic = AstExprVar <$> position <*> ((:) <$> token (char '@') <*> ident)
 
+callable :: Parser AstExpr
+callable = parens expr <|> exprIdent
+
 call :: Parser AstExpr
 call =
   AstExprCall
     <$> position
-    <*> (parens expr <|> exprIdent <|> intrinsic)
+    <*> (callable <|> intrinsic)
     <*> parens (sepBy expr comma)
 
 expr :: Parser AstExpr
@@ -178,12 +184,9 @@ expr =
       AstExprInt <$> position <*> integer,
       binOp,
       unOp,
-      AstExprRead
-        <$> position
-        <*> (token (char '[') *> expr)
-        <*> (token (char ',') *> expr <* token (char ']')),
-      parens
-        (AstExprAs <$> position <*> (expr <* token (string "as")) <*> type'),
+      AstExprRead <$> position <*> callable <*> brackets expr,
+      parens $
+        AstExprAs <$> position <*> (expr <* token (string "as")) <*> type',
       exprIdent
     ]
 
@@ -191,7 +194,12 @@ statement :: Parser AstStmt
 statement =
   foldr1
     (<|>)
-    [ AstStmtEffect <$> position <*> (expr <* semicolon),
+    [ AstStmtSave
+        <$> position
+        <*> callable
+        <*> brackets expr
+        <*> (token (char '=') *> expr <* semicolon),
+      AstStmtEffect <$> position <*> (expr <* semicolon),
       AstStmtIf
         <$> position <*> (token (string "if") *> expr) <*> braces statements,
       AstStmtLoop
@@ -207,12 +215,7 @@ statement =
         <$> position <*> (ident <* token (char '=')) <*> (expr <* semicolon),
       AstStmtDiscard
         <$> position
-        <*> (token (char '_') *> token (char '=') *> expr <* semicolon),
-      AstStmtSave
-        <$> position
-        <*> (token (char '[') *> expr <* token (char ','))
-        <*> (expr <* token (char ']'))
-        <*> (token (char '=') *> expr <* semicolon)
+        <*> (token (char '_') *> token (char '=') *> expr <* semicolon)
     ]
 
 statements :: Parser [AstStmt]

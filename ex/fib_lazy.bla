@@ -1,36 +1,36 @@
 lazy_new(f fn(addr) -> addr, x addr) :: addr {
     l = @alloc_heap(4);
-    [l, 0] = 0;          # cached
-    [l, 1] = 0;          # result
-    [l, 2] = (f as i32); # func
-    [l, 3] = (x as i32); # args
+    l[0] = 0;          # cached
+    l[1] = 0;          # result
+    l[2] = (f as i32); # func
+    l[3] = (x as i32); # args
     return l;
 }
 
 lazy_get_cached(l addr) :: i32 {
-    return [l, 0];
+    return l[0];
 }
 
 lazy_set_cached(l addr, c i32) {
-    [l, 0] = c;
+    l[0] = c;
     return;
 }
 
 lazy_get_result(l addr) :: addr {
-    return ([l, 1] as addr);
+    return (l[1] as addr);
 }
 
 lazy_set_result(l addr, r addr) {
-    [l, 1] = (r as i32);
+    l[1] = (r as i32);
     return;
 }
 
 lazy_get_func(l addr) :: fn(addr) -> addr {
-    return ([l, 2] as fn(addr) -> addr);
+    return (l[2] as fn(addr) -> addr);
 }
 
 lazy_get_args(l addr) :: addr {
-    return ([l, 3] as addr);
+    return (l[3] as addr);
 }
 
 lazy_force(l addr) :: addr {
@@ -38,12 +38,12 @@ lazy_force(l addr) :: addr {
         lazy_set_result(l, (lazy_get_func(l))(lazy_get_args(l)));
         lazy_set_cached(l, 1);
     }
-    return ([l, 1] as addr);
+    return (l[1] as addr);
 }
 
 list_set(l addr, i i32, f fn(addr) -> addr, x addr) {
-    [l, 0] = i;                       # head
-    [l, 1] = (lazy_new(f, x) as i32); # tail
+    l[0] = i;                       # head
+    l[1] = (lazy_new(f, x) as i32); # tail
     return;
 }
 
@@ -54,11 +54,11 @@ list_new(i i32, f fn(addr) -> addr, x addr) :: addr {
 }
 
 list_get_head(l addr) :: i32 {
-    return [l, 0];
+    return l[0];
 }
 
 list_get_tail(l addr) :: addr {
-    return lazy_force(([l, 1] as addr));
+    return lazy_force((l[1] as addr));
 }
 
 list_drop(l addr, n i32) :: addr {
@@ -81,15 +81,15 @@ f1(x addr) :: addr {
 }
 
 zip0(x addr) :: addr {
-    a = list_get_tail(([x, 0] as addr));
-    b = list_get_tail(([x, 1] as addr));
+    a = list_get_tail((x[0] as addr));
+    b = list_get_tail((x[1] as addr));
     return zip1(a, b);
 }
 
 zip1(a addr, b addr) :: addr {
     x = @alloc_heap(2);
-    [x, 0] = (a as i32);
-    [x, 1] = (b as i32);
+    x[0] = (a as i32);
+    x[1] = (b as i32);
     return list_new((list_get_head(a) + list_get_head(b)), zip0, x);
 }
 
