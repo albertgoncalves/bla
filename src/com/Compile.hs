@@ -132,14 +132,14 @@ compileExpr context (AstExprBinOp _ l op r) =
 -- NOTE: Even though some functions do not return values, we always augment
 -- the stack here _as if_ that was true. We end up handling this when compiling
 -- `AstStmtEffect` statements below, which blindly decrements the stack offset.
-compileExpr context (AstExprCall _ (AstExprVar _ "@alloc_heap") args) =
-  appendContextInsts (foldl' compileExpr context args) [InstAlloc]
-compileExpr context (AstExprCall _ (AstExprVar _ "@set_heap_len") args) =
-  appendContextInsts (foldl' compileExpr context args) [InstHlen]
-compileExpr context (AstExprCall _ (AstExprVar _ "@print_char") args) =
-  appendContextInsts (foldl' compileExpr context args) [InstPrCh]
-compileExpr context (AstExprCall _ (AstExprVar _ "@print_i32") args) =
-  appendContextInsts (foldl' compileExpr context args) [InstPrI32]
+compileExpr context (AstExprCall _ (AstExprVar _ "@alloc_heap") [arg]) =
+  appendContextInsts (compileExpr context arg) [InstAlloc]
+compileExpr context (AstExprCall _ (AstExprVar _ "@set_heap_len") [arg]) =
+  appendContextInsts (compileExpr context arg) [InstHlen]
+compileExpr context (AstExprCall _ (AstExprVar _ "@print_char") [arg]) =
+  appendContextInsts (compileExpr context arg) [InstPrCh]
+compileExpr context (AstExprCall _ (AstExprVar _ "@print_i32") [arg]) =
+  appendContextInsts (compileExpr context arg) [InstPrI32]
 compileExpr context0 (AstExprCall _ expr args) =
   appendContextInsts context2 [InstJump, PreInstLabelSet label]
     `setStackOffset` succ (getContextStackOffset context0)
