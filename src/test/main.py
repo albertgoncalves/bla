@@ -86,7 +86,7 @@ class Tests(TestCase):
         self.into_test(
             "spawn",
             0,
-            "987\n-123\n-567\n",
+            "2\n3\n1\n",
             "",
         )
 

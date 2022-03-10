@@ -1,19 +1,11 @@
 main() {
-    x = @alloc_heap(2);
-    x[0] = -122;
-    y = @alloc_heap(1);
-    x[1] = 1;
-    y[0] = 987;
-    z = @alloc_heap(1);
-    z[0] = -567;
-    if 1 {
-        @spawn(f1, x);
-    }
-    f0(y);
-    loop {
-        @spawn(f0, z);
-        break 0;
-    }
+    x = @alloc_heap(3);
+    x[0] = 1;
+    x[1] = 2;
+    x[2] = 3;
+    @spawn(f0, x);
+    @spawn(f1, x);
+    f2(x);
     return;
 }
 
@@ -23,12 +15,30 @@ println_i32(x i32) {
     return;
 }
 
+until(n i32) {
+    i = 0;
+    loop {
+        if (i == n) {
+            return;
+        }
+        i = (i + 1);
+    }
+    return;
+}
+
 f0(x addr) {
+    until(1000);
     println_i32((x[0]));
     return;
 }
 
 f1(x addr) {
-    println_i32(((x[0]) - (x[1])));
+    println_i32((x[1]));
+    return;
+}
+
+f2(x addr) {
+    until(500);
+    println_i32((x[2]));
     return;
 }

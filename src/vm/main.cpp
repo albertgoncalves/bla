@@ -10,6 +10,8 @@
 #define CAP_THREADS (1 << 4)
 #define CAP_HEAP    (1 << 9)
 
+#define THREAD_STEPS 100
+
 enum Inst {
     INST_HALT  = 0,
     INST_PUSH  = 1,
@@ -350,6 +352,15 @@ static void step(Memory* memory, Thread* thread) {
     }
 }
 
+static bool any_alive(Memory* memory) {
+    for (u32 i = 0; i < memory->threads_len; ++i) {
+        if (memory->threads[i].alive) {
+            return true;
+        }
+    }
+    return false;
+}
+
 i32 main(i32 n, const char** args) {
     if (n < 2) {
         fprintf(stderr,
@@ -361,13 +372,15 @@ i32 main(i32 n, const char** args) {
     Memory* memory      = alloc_memory();
     Thread* thread_main = alloc_thread(memory, 0);
     memory->program     = read_program(args[1]);
-    for (u32 i = 0; i < CAP_THREADS; ++i) {
-        if (memory->threads_len <= i) {
-            break;
-        }
-        Thread* thread = &memory->threads[i];
-        while (thread->alive) {
-            step(memory, thread);
+    while (any_alive(memory)) {
+        for (u32 i = 0; i < memory->threads_len; ++i) {
+            Thread* thread = &memory->threads[i];
+            for (u32 j = 0; j < THREAD_STEPS; ++j) {
+                if (!thread->alive) {
+                    break;
+                }
+                step(memory, thread);
+            }
         }
     }
     EXIT_IF(thread_main->stack.top != 0);
