@@ -82,6 +82,14 @@ class Tests(TestCase):
             "  ex/pre_compile_error.bla:4:5 [ pre-compile error ]\n",
         )
 
+    def test_spawn(self):
+        self.into_test(
+            "spawn",
+            0,
+            "987\n-123\n-567\n",
+            "",
+        )
+
     def test_type_error(self):
         self.into_test(
             "type_error",
