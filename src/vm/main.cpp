@@ -116,9 +116,9 @@ static void inst_halt(Thread* thread) {
 
 static void inst_push(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
-    u32 value = program.insts[thread->insts_index++];
+    u32 x = program.insts[thread->insts_index++];
     EXIT_IF(CAP_STACK <= thread->stack.top);
-    thread->stack.nodes[thread->stack.top++].as_u32 = value;
+    thread->stack.nodes[thread->stack.top++].as_u32 = x;
 }
 
 static void inst_copy(Program program, Thread* thread) {
