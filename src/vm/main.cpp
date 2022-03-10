@@ -70,6 +70,46 @@ struct Memory {
     Program program;
 };
 
+static Memory* alloc_memory() {
+    void* address = mmap(null,
+                         sizeof(Memory),
+                         PROT_READ | PROT_WRITE,
+                         MAP_ANONYMOUS | MAP_PRIVATE,
+                         -1,
+                         0);
+    EXIT_IF(address == MAP_FAILED);
+    return reinterpret_cast<Memory*>(address);
+}
+
+static Thread* alloc_thread(Memory* memory, u32 insts_index) {
+    EXIT_IF(CAP_THREADS <= memory->threads_len);
+    Thread* thread      = &memory->threads[memory->threads_len++];
+    thread->insts_index = insts_index;
+    thread->alive       = true;
+    return thread;
+}
+
+static Program read_program(const char* path) {
+    i32 file = open(path, O_RDONLY);
+    EXIT_IF(file < 0);
+    FileStat stat;
+    EXIT_IF(fstat(file, &stat) < 0)
+    Program program;
+    program.insts_len = static_cast<u32>(stat.st_size) / sizeof(u32);
+    {
+        void* address = mmap(null,
+                             static_cast<u32>(stat.st_size),
+                             PROT_READ,
+                             MAP_SHARED,
+                             file,
+                             0);
+        EXIT_IF(address == MAP_FAILED);
+        program.insts = reinterpret_cast<u32*>(address);
+    }
+    close(file);
+    return program;
+}
+
 static void inst_halt(Thread* thread) {
     thread->alive = false;
 }
@@ -283,46 +323,6 @@ static void step(Program program, Thread* thread, Heap* heap) {
     default:
         EXIT();
     }
-}
-
-static Memory* alloc_memory() {
-    void* address = mmap(null,
-                         sizeof(Memory),
-                         PROT_READ | PROT_WRITE,
-                         MAP_ANONYMOUS | MAP_PRIVATE,
-                         -1,
-                         0);
-    EXIT_IF(address == MAP_FAILED);
-    return reinterpret_cast<Memory*>(address);
-}
-
-static Thread* alloc_thread(Memory* memory) {
-    EXIT_IF(CAP_THREADS <= memory->threads_len);
-    Thread* thread      = &memory->threads[memory->threads_len++];
-    thread->insts_index = 0;
-    thread->alive       = true;
-    return thread;
-}
-
-static Program read_program(const char* path) {
-    i32 file = open(path, O_RDONLY);
-    EXIT_IF(file < 0);
-    FileStat stat;
-    EXIT_IF(fstat(file, &stat) < 0)
-    Program program;
-    program.insts_len = static_cast<u32>(stat.st_size) / sizeof(u32);
-    {
-        void* address = mmap(null,
-                             static_cast<u32>(stat.st_size),
-                             PROT_READ,
-                             MAP_SHARED,
-                             file,
-                             0);
-        EXIT_IF(address == MAP_FAILED);
-        program.insts = reinterpret_cast<u32*>(address);
-    }
-    close(file);
-    return program;
 }
 
 i32 main(i32 n, const char** args) {
