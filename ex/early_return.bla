@@ -4,14 +4,34 @@ println_i32(x i32) {
     return;
 }
 
+until(n i32) {
+    i = 0;
+    loop {
+        if (i == n) {
+            return;
+        }
+        i = (i + 1);
+    }
+    return;
+}
+
+f(x i32) {
+    i = 0;
+    loop {
+        until(1);
+        if (!(x == 1)) {
+            println_i32(1);
+            return;
+        }
+        loop {
+            println_i32(x);
+        }
+    }
+    return;
+}
+
 main() {
     x = 0;
-    if (!(x == 1)) {
-        println_i32(1);
-        return;
-    }
-    loop {
-        println_i32(x);
-    }
+    f(x);
     return;
 }

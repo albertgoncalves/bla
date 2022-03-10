@@ -217,12 +217,11 @@ compileStmt context (AstStmtRet _ (Just expr)) =
         InstJump
       ]
 compileStmt context (AstStmtRet _ Nothing) =
-  decrStackOffset $
-    appendContextInsts
-      context
-      [ PreInstLabelPush $ getLabelRet $ getContextLabels context,
-        InstJump
-      ]
+  appendContextInsts
+    context
+    [ PreInstLabelPush $ getLabelRet $ getContextLabels context,
+      InstJump
+    ]
 compileStmt context0 (AstStmtLoop _ body) =
   dropLabelLoop $
     appendContextInsts
