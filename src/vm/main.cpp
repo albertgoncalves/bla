@@ -251,26 +251,26 @@ static void inst_pri32(Thread* thread) {
     printf("%d", thread->stack.nodes[--thread->stack.top].as_i32);
 }
 
-static void step(Program program, Thread* thread, Heap* heap) {
-    EXIT_IF(program.insts_len <= thread->insts_index);
-    switch (static_cast<Inst>(program.insts[thread->insts_index++])) {
+static void step(Memory* memory, Thread* thread) {
+    EXIT_IF(memory->program.insts_len <= thread->insts_index);
+    switch (static_cast<Inst>(memory->program.insts[thread->insts_index++])) {
     case INST_HALT: {
         return inst_halt(thread);
     }
     case INST_PUSH: {
-        return inst_push(program, thread);
+        return inst_push(memory->program, thread);
     }
     case INST_COPY: {
-        return inst_copy(program, thread);
+        return inst_copy(memory->program, thread);
     }
     case INST_STORE: {
-        return inst_store(program, thread);
+        return inst_store(memory->program, thread);
     }
     case INST_DROP: {
-        return inst_drop(program, thread);
+        return inst_drop(memory->program, thread);
     }
     case INST_RSRV: {
-        return inst_rsrv(program, thread);
+        return inst_rsrv(memory->program, thread);
     }
     case INST_SWAP: {
         return inst_swap(thread);
@@ -303,16 +303,16 @@ static void step(Program program, Thread* thread, Heap* heap) {
         return inst_not(thread);
     }
     case INST_ALLOC: {
-        return inst_alloc(thread, heap);
+        return inst_alloc(thread, &memory->heap);
     }
     case INST_SAVE: {
-        return inst_save(thread, heap);
+        return inst_save(thread, &memory->heap);
     }
     case INST_READ: {
-        return inst_read(thread, heap);
+        return inst_read(thread, &memory->heap);
     }
     case INST_HLEN: {
-        return inst_hlen(thread, heap);
+        return inst_hlen(thread, &memory->heap);
     }
     case INST_PRCH: {
         return inst_prch(thread);
@@ -337,7 +337,7 @@ i32 main(i32 n, const char** args) {
     Thread* thread  = alloc_thread(memory);
     memory->program = read_program(args[1]);
     while (thread->alive) {
-        step(memory->program, thread, &memory->heap);
+        step(memory, thread);
     }
     EXIT_IF(thread->stack.top != 0);
     return OK;
