@@ -86,7 +86,7 @@ class Tests(TestCase):
         self.into_test(
             "spawn",
             0,
-            "2\n3\n1\n",
+            "2\n3\n500\n1\n",
             "",
         )
 

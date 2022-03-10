@@ -1,11 +1,26 @@
 main() {
-    x = @alloc_heap(3);
+    x = @alloc_heap(4);
     x[0] = 1;
     x[1] = 2;
     x[2] = 3;
-    @spawn(f0, x);
-    @spawn(f1, x);
-    f2(x);
+    x[3] = 0;
+    @spawn(print_after_1000, x);
+    @spawn(print_now, x);
+    @spawn(spawn_many_threads, x);
+    print_after_100(x);
+    return;
+}
+
+spawn_many_threads(x addr) {
+    i = 0;
+    loop {
+        if (i == 500) {
+            break 0;
+        }
+        @spawn(add_1, x);
+        i = (i + 1);
+    }
+    println_i32((x[3]));
     return;
 }
 
@@ -26,19 +41,24 @@ until(n i32) {
     return;
 }
 
-f0(x addr) {
+print_now(x addr) {
+    println_i32((x[1]));
+    return;
+}
+
+print_after_100(x addr) {
+    until(100);
+    println_i32((x[2]));
+    return;
+}
+
+print_after_1000(x addr) {
     until(1000);
     println_i32((x[0]));
     return;
 }
 
-f1(x addr) {
-    println_i32((x[1]));
-    return;
-}
-
-f2(x addr) {
-    until(500);
-    println_i32((x[2]));
+add_1(x addr) {
+    x[3] = ((x[3]) + 1);
     return;
 }
