@@ -26,6 +26,7 @@ data Inst
   | InstSave
   | InstRead
   | InstHlen
+  | InstSpawn
   | InstPrCh
   | InstPrI32
   | PreInstLabelSet String
@@ -136,6 +137,27 @@ compileExpr context (AstExprCall _ (AstExprVar _ "@alloc_heap") [arg]) =
   appendContextInsts (compileExpr context arg) [InstAlloc]
 compileExpr context (AstExprCall _ (AstExprVar _ "@set_heap_len") [arg]) =
   appendContextInsts (compileExpr context arg) [InstHlen]
+compileExpr
+  context0
+  (AstExprCall _ (AstExprVar _ "@spawn") [argFunc, argAddr]) =
+    appendContextInsts (incrLabelCount context3) instsPost
+      `setStackOffset` succ (getContextStackOffset context0)
+    where
+      instsPre = [PreInstLabelPush labelParent, PreInstLabelPush labelChild]
+      instsPost =
+        [ InstSpawn,
+          InstJump,
+          PreInstLabelSet labelChild,
+          InstHalt,
+          PreInstLabelSet labelParent
+        ]
+      labelParent = labelFromContext context0
+      labelChild = labelFromContext context3
+      context1 =
+        appendContextInsts (incrLabelCount context0) instsPre
+          `setStackOffset` (getContextStackOffset context0 + 2)
+      context2 = compileExpr context1 argAddr
+      context3 = compileExpr context2 argFunc
 compileExpr context (AstExprCall _ (AstExprVar _ "@print_char") [arg]) =
   appendContextInsts (compileExpr context arg) [InstPrCh]
 compileExpr context (AstExprCall _ (AstExprVar _ "@print_i32") [arg]) =

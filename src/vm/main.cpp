@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #define CAP_STACK   (1 << 12)
-#define CAP_THREADS 1
+#define CAP_THREADS (1 << 4)
 #define CAP_HEAP    (1 << 9)
 
 enum Inst {
@@ -31,6 +31,7 @@ enum Inst {
     INST_SAVE  = 17,
     INST_READ  = 18,
     INST_HLEN  = 19,
+    INST_SPAWN = 20,
     INST_PRCH  = 100,
     INST_PRI32 = 101,
 };
@@ -108,6 +109,11 @@ static Program read_program(const char* path) {
     }
     close(file);
     return program;
+}
+
+static void push_thread(Thread* thread, u32 x) {
+    EXIT_IF(CAP_STACK <= thread->stack.top);
+    thread->stack.nodes[thread->stack.top++].as_u32 = x;
 }
 
 static void inst_halt(Thread* thread) {
@@ -241,6 +247,22 @@ static void inst_hlen(Thread* thread, Heap* heap) {
     heap->len = heap_len;
 }
 
+static void inst_spawn(Memory* memory, Thread* thread_parent) {
+    EXIT_IF(CAP_THREADS <= memory->threads_len);
+    EXIT_IF(thread_parent->stack.top < 4);
+    u32 func = thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
+    u32 addr = thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
+    u32 jump_child =
+        thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
+    u32 jump_parent =
+        thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
+    Thread* thread_child = alloc_thread(memory, thread_parent->insts_index);
+    push_thread(thread_child, jump_child);
+    push_thread(thread_child, addr);
+    push_thread(thread_child, func);
+    thread_parent->insts_index = jump_parent;
+}
+
 static void inst_prch(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     putchar(thread->stack.nodes[--thread->stack.top].as_i32);
@@ -314,6 +336,9 @@ static void step(Memory* memory, Thread* thread) {
     case INST_HLEN: {
         return inst_hlen(thread, &memory->heap);
     }
+    case INST_SPAWN: {
+        return inst_spawn(memory, thread);
+    }
     case INST_PRCH: {
         return inst_prch(thread);
     }
@@ -333,12 +358,18 @@ i32 main(i32 n, const char** args) {
         _exit(ERROR);
     }
     EXIT_IF(n < 2);
-    Memory* memory  = alloc_memory();
-    Thread* thread  = alloc_thread(memory);
-    memory->program = read_program(args[1]);
-    while (thread->alive) {
-        step(memory, thread);
+    Memory* memory      = alloc_memory();
+    Thread* thread_main = alloc_thread(memory, 0);
+    memory->program     = read_program(args[1]);
+    for (u32 i = 0; i < CAP_THREADS; ++i) {
+        if (memory->threads_len <= i) {
+            break;
+        }
+        Thread* thread = &memory->threads[i];
+        while (thread->alive) {
+            step(memory, thread);
+        }
     }
-    EXIT_IF(thread->stack.top != 0);
+    EXIT_IF(thread_main->stack.top != 0);
     return OK;
 }

@@ -154,6 +154,9 @@ intrinsics :: [(String, Sig)]
 intrinsics =
   [ ("@alloc_heap", Sig 0 [AstTypeI32 0] $ Just $ AstTypeAddr 0),
     ("@set_heap_len", Sig 0 [AstTypeI32 0] Nothing),
+    ( "@spawn",
+      Sig 0 [AstTypeFunc 0 [AstTypeAddr 0] Nothing, AstTypeAddr 0] Nothing
+    ),
     ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
     ("@print_i32", Sig 0 [AstTypeI32 0] Nothing)
   ]

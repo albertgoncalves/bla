@@ -26,6 +26,7 @@ toInt InstAlloc = [16]
 toInt InstSave = [17]
 toInt InstRead = [18]
 toInt InstHlen = [19]
+toInt InstSpawn = [20]
 toInt InstPrCh = [100]
 toInt InstPrI32 = [101]
 toInt (PreInstLabelSet _) = undefined
