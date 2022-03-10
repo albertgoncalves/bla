@@ -69,7 +69,8 @@ struct Program {
 struct Memory {
     Heap    heap;
     Thread  threads[CAP_THREADS];
-    u32     threads_len;
+    Thread* threads_stack[CAP_THREADS];
+    u32     threads_alive;
     Program program;
 };
 
@@ -81,12 +82,17 @@ static Memory* alloc_memory() {
                          -1,
                          0);
     EXIT_IF(address == MAP_FAILED);
-    return reinterpret_cast<Memory*>(address);
+    Memory* memory = reinterpret_cast<Memory*>(address);
+    for (u32 i = 0; i < CAP_THREADS; ++i) {
+        memory->threads_stack[i] = &memory->threads[i];
+    }
+    return memory;
 }
 
 static Thread* alloc_thread(Memory* memory, u32 insts_index) {
-    EXIT_IF(CAP_THREADS <= memory->threads_len);
-    Thread* thread      = &memory->threads[memory->threads_len++];
+    EXIT_IF(CAP_THREADS <= memory->threads_alive);
+    Thread* thread =
+        memory->threads_stack[(CAP_THREADS - memory->threads_alive++) - 1];
     thread->insts_index = insts_index;
     thread->alive       = true;
     return thread;
@@ -118,8 +124,11 @@ static void push_thread(Thread* thread, u32 x) {
     thread->stack.nodes[thread->stack.top++].as_u32 = x;
 }
 
-static void inst_halt(Thread* thread) {
+static void inst_halt(Memory* memory, Thread* thread) {
+    EXIT_IF(memory->threads_alive == 0);
     thread->alive = false;
+    memory->threads_stack[(CAP_THREADS - --memory->threads_alive) - 1] =
+        thread;
 }
 
 static void inst_push(Program program, Thread* thread) {
@@ -250,7 +259,7 @@ static void inst_hlen(Thread* thread, Heap* heap) {
 }
 
 static void inst_spawn(Memory* memory, Thread* thread_parent) {
-    EXIT_IF(CAP_THREADS <= memory->threads_len);
+    EXIT_IF(CAP_THREADS <= memory->threads_alive);
     EXIT_IF(thread_parent->stack.top < 4);
     u32 func = thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
     u32 addr = thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
@@ -279,7 +288,7 @@ static void step(Memory* memory, Thread* thread) {
     EXIT_IF(memory->program.insts_len <= thread->insts_index);
     switch (static_cast<Inst>(memory->program.insts[thread->insts_index++])) {
     case INST_HALT: {
-        return inst_halt(thread);
+        return inst_halt(memory, thread);
     }
     case INST_PUSH: {
         return inst_push(memory->program, thread);
@@ -352,15 +361,6 @@ static void step(Memory* memory, Thread* thread) {
     }
 }
 
-static bool any_alive(Memory* memory) {
-    for (u32 i = 0; i < memory->threads_len; ++i) {
-        if (memory->threads[i].alive) {
-            return true;
-        }
-    }
-    return false;
-}
-
 i32 main(i32 n, const char** args) {
     if (n < 2) {
         fprintf(stderr,
@@ -372,8 +372,8 @@ i32 main(i32 n, const char** args) {
     Memory* memory      = alloc_memory();
     Thread* thread_main = alloc_thread(memory, 0);
     memory->program     = read_program(args[1]);
-    while (any_alive(memory)) {
-        for (u32 i = 0; i < memory->threads_len; ++i) {
+    while (0 < memory->threads_alive) {
+        for (u32 i = 0; i < CAP_THREADS; ++i) {
             Thread* thread = &memory->threads[i];
             for (u32 j = 0; j < THREAD_STEPS; ++j) {
                 if (!thread->alive) {
