@@ -84,6 +84,7 @@ static Memory* alloc_memory() {
     EXIT_IF(address == MAP_FAILED);
     Memory* memory = reinterpret_cast<Memory*>(address);
     for (u32 i = 0; i < CAP_THREADS; ++i) {
+        memory->threads[i].alive = false;
         memory->threads_stack[i] = &memory->threads[i];
     }
     return memory;
