@@ -9,7 +9,6 @@ typedef uint32_t u32;
 
 #define null nullptr
 
-typedef FILE        File;
 typedef struct stat FileStat;
 
 #define OK    0
