@@ -7,8 +7,8 @@ f1() :: i32 {
 }
 
 main() {
-    x = (((f0 as i32) + 2) - 2);
-    f = (x as fn(fn() -> i32) -> i32);
+    x = f0 as i32 + 2 - 2;
+    f = x as fn(fn() -> i32) -> i32;
     @print_i32(f(f1));
     @print_char(10);
     return;

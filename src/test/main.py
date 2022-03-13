@@ -55,16 +55,11 @@ class Tests(TestCase):
     def test_heap(self):
         self.into_test("heap", 0, "-2\n12\n16\n", "")
 
+    def test_more_nested_calls(self):
+        self.into_test("more_nested_calls", 0, "0\n1\n", "")
+
     def test_nested_calls(self):
         self.into_test("nested_calls", 0, "-234\n", "")
-
-    def test_nested_parse_error(self):
-        self.into_test(
-            "nested_parse_error",
-            1,
-            "",
-            "  ex/nested_parse_error.bla:25:18 [ parse error ]\n",
-        )
 
     def test_parse_error(self):
         self.into_test(

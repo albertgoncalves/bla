@@ -1,21 +1,21 @@
 fib(n i32) :: i32 {
     a = 0;
     b = -1;
-    b = (-b);
+    b = -b;
     loop {
-        if (n == 0) {
+        if n == 0 {
             break 0;
         }
-        c = (a + b);
+        c = a + b;
         a = b;
         b = c;
-        n = (n + (0 - 1));
+        n = n + 0 - 1;
     }
     return a;
 }
 
 main() {
-    @print_i32((-(-fib(46))));
+    @print_i32(-(-fib(46)));
     @print_char(10);
     return;
 }

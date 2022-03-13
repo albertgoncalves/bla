@@ -14,13 +14,13 @@ main() {
 spawn_many_threads(x addr) {
     i = 0;
     loop {
-        if (i == 500) {
+        if i == 500 {
             break 0;
         }
         @spawn(add_1, x);
-        i = (i + 1);
+        i = i + 1;
     }
-    println_i32((x[3]));
+    println_i32(x[3]);
     return;
 }
 
@@ -33,32 +33,32 @@ println_i32(x i32) {
 until(n i32) {
     i = 0;
     loop {
-        if (i == n) {
+        if i == n {
             return;
         }
-        i = (i + 1);
+        i = i + 1;
     }
     return;
 }
 
 print_now(x addr) {
-    println_i32((x[1]));
+    println_i32(x[1]);
     return;
 }
 
 print_after_100(x addr) {
     until(100);
-    println_i32((x[2]));
+    println_i32(x[2]);
     return;
 }
 
 print_after_1000(x addr) {
     until(1000);
-    println_i32((x[0]));
+    println_i32(x[0]);
     return;
 }
 
 add_1(x addr) {
-    x[3] = ((x[3]) + 1);
+    x[3] = x[3] + 1;
     return;
 }
