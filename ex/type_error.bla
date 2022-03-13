@@ -1,6 +1,6 @@
 f0(x i32) :: i32 {
-    x = (x + 1);
-    return (876 + x);
+    x = x + 1;
+    return 876 + x;
 }
 
 f1(x i32) {

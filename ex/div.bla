@@ -4,10 +4,10 @@ main() {
 }
 
 f(x i32) {
-    x = (-(483 / -23));
+    x = -(483 / -23);
     loop {
         loop {
-            if (x == 21) {
+            if x == 21 {
                 @print_i32(x);
                 x = 10;
                 @print_char(x);

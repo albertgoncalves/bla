@@ -3,7 +3,7 @@ main() {
     x = 10;
     y = x;
     g = f(y);
-    @print_i32((x * g(-987, 10)));
+    @print_i32(x * g(-987, 10));
     @print_char(10);
     return;
 }
@@ -20,7 +20,7 @@ f1(y i32) :: fn(i32, i32) -> i32 {
 }
 
 f0(x i32, y i32) :: i32 {
-    return ((x - 3) / y);
+    return (x - 3) / y;
 }
 
 f3(x i32) {
