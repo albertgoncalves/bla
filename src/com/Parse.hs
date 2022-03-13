@@ -102,7 +102,7 @@ dropThru f (x : xs)
 
 token :: Source -> Either Pos (Token, Source)
 token [] = Right (TokenEnd, [])
-token ('#' : cs) = keywordOrToken $ dropThru (== '\n') cs
+token ('#' : cs) = maybeKeyword $ dropThru (== '\n') cs
 token cs'@('_' : cs) = Right (TokenIdent (length cs') "_", cs)
 token cs'@('(' : cs) = Right (TokenLParen $ length cs', cs)
 token cs'@(')' : cs) = Right (TokenRParen $ length cs', cs)
@@ -131,13 +131,13 @@ token cs'@(c : cs)
     let (as, bs) = span isDigit cs in Right (TokenInt p (read $ c : as), bs)
   | isLower c =
     let (as, bs) = span isIdent cs in Right (TokenIdent p (c : as), bs)
-  | isSpace c = keywordOrToken $ dropWhile isSpace cs
+  | isSpace c = maybeKeyword $ dropWhile isSpace cs
   | otherwise = Left p
   where
     p = length cs'
 
-keywordOrToken :: Source -> Either Pos (Token, Source)
-keywordOrToken as0 =
+maybeKeyword :: Source -> Either Pos (Token, Source)
+maybeKeyword as0 =
   case keywords as0 of
     Just (b, as1) -> return (b, as1)
     Nothing -> token as0
@@ -145,7 +145,7 @@ keywordOrToken as0 =
 tokens :: Source -> Either Pos [Token]
 tokens [] = Right []
 tokens as0 = do
-  (b, as1) <- keywordOrToken as0
+  (b, as1) <- maybeKeyword as0
   bs <- tokens as1
   return $ b : bs
 
