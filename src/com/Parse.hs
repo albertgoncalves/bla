@@ -278,6 +278,7 @@ exprRight left ts0'@(t : ts0) prec =
           exprRight (AstExprBinOp (getPos t) left op right) ts1 prec
     Left _ -> Right (left, ts0')
 
+-- NOTE: See `https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html`.
 expr :: [Token] -> Int -> Either Pos (AstExpr, [Token])
 expr ts0 prec0 = do
   r0 <- exprLeft ts0
