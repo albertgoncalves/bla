@@ -171,12 +171,12 @@ commaDelim f ts0 = do
 type' :: [Token] -> Either Pos (AstType, [Token])
 type' (TokenKeyword p "i32" : ts) = Right (AstTypeI32 p, ts)
 type' (TokenKeyword p "addr" : ts) = Right (AstTypeAddr p, ts)
-type' (TokenKeyword p "fn" : TokenLParen _ : TokenRParen _ : ts0) = do
+type' (TokenKeyword p "fn" : TokenLParen _ : TokenRParen _ : ts0) =
   case ts0 of
     (TokenArrow _ : ts1) -> do
       (returnType, ts2) <- type' ts1
       return (AstTypeFunc p [] (Just returnType), ts2)
-    ts1 -> return (AstTypeFunc p [] Nothing, ts1)
+    ts1 -> Right (AstTypeFunc p [] Nothing, ts1)
 type' (TokenKeyword p "fn" : TokenLParen _ : ts0) = do
   (argTypes, ts1) <- commaDelim type' ts0
   case ts1 of
