@@ -1,0 +1,9 @@
+main() {
+    x = -2;
+    if x {
+    }
+    x = 1;
+    @print_i32(x);
+    @print_char(10);
+    return;
+}

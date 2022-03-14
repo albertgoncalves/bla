@@ -344,6 +344,7 @@ statement ts0@(t0 : _) = do
     (_, []) -> Left 0
 
 statements :: [Token] -> Either Pos ([AstStmt], [Token])
+statements ts@(TokenRBrace _ : _) = Right ([], ts)
 statements ts0 = do
   (s, ts1) <- statement ts0
   case ts1 of

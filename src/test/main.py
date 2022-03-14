@@ -40,6 +40,9 @@ class Tests(TestCase):
     def test_effect(self):
         self.into_test("effect", 0, "-123\n", "")
 
+    def test_empty_block(self):
+        self.into_test("empty_block", 0, "1\n", "")
+
     def test_fib_lazy(self):
         self.into_test("fib_lazy", 0, "1836311903\n", "")
 
