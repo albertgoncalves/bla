@@ -217,7 +217,7 @@ exprLeft [] = Left 0
 exprLeft (TokenLParen _ : ts0) = do
   r <- expr ts0 0
   case r of
-    (value, TokenRParen _ : ts1) -> Right (value, ts1)
+    (e, TokenRParen _ : ts1) -> Right (e, ts1)
     (_, t : _) -> Left $ getPos t
     _ -> Left 0
 exprLeft (TokenIdent p ident : ts) = Right (AstExprVar p ident, ts)
@@ -225,8 +225,8 @@ exprLeft (TokenIntrin p intrinsic : ts) = Right (AstExprVar p intrinsic, ts)
 exprLeft (TokenInt p n : ts) = Right (AstExprInt p n, ts)
 exprLeft (t : ts0) = do
   (prec, op) <- precPrefix t
-  (value, ts1) <- expr ts0 prec
-  return (AstExprUnOp (getPos t) op value, ts1)
+  (e, ts1) <- expr ts0 prec
+  return (AstExprUnOp (getPos t) op e, ts1)
 
 exprArgs :: [Token] -> Either Pos ([AstExpr], [Token])
 exprArgs [] = Left 0
@@ -239,35 +239,34 @@ exprArgs ts0 = do
     (arg, ts1) -> Right ([arg], ts1)
 
 exprRight :: AstExpr -> [Token] -> Int -> Either Pos (AstExpr, [Token])
-exprRight value [] _ = Right (value, [])
-exprRight value (TokenLParen p : TokenRParen _ : ts) prec =
-  exprRight (AstExprCall p value []) ts prec
-exprRight value ts0'@(TokenLParen p : ts0) prec =
+exprRight e [] _ = Right (e, [])
+exprRight e (TokenLParen p : TokenRParen _ : ts) prec =
+  exprRight (AstExprCall p e []) ts prec
+exprRight e ts0'@(TokenLParen p : ts0) prec =
   if precParen < prec
-    then Right (value, ts0')
+    then Right (e, ts0')
     else do
       r <- exprArgs ts0
       case r of
-        (args, TokenRParen _ : ts1) ->
-          exprRight (AstExprCall p value args) ts1 prec
+        (es, TokenRParen _ : ts1) -> exprRight (AstExprCall p e es) ts1 prec
         (_, t : _) -> Left $ getPos t
         (_, []) -> Left 0
-exprRight value ts0'@(TokenLBracket p : ts0) prec =
+exprRight base ts0'@(TokenLBracket p : ts0) prec =
   if precBracket < prec
-    then Right (value, ts0')
+    then Right (base, ts0')
     else do
       r <- expr ts0 0
       case r of
-        (arg, TokenRBracket _ : ts1) ->
-          exprRight (AstExprRead p value arg) ts1 prec
+        (offset, TokenRBracket _ : ts1) ->
+          exprRight (AstExprRead p base offset) ts1 prec
         (_, t : _) -> Left $ getPos t
         (_, []) -> Left 0
-exprRight value ts0'@(TokenKeyword p "as" : ts0) prec =
+exprRight e ts0'@(TokenKeyword p "as" : ts0) prec =
   if precAs < prec
-    then Right (value, ts0')
+    then Right (e, ts0')
     else do
-      (valueType, ts1) <- type' ts0
-      exprRight (AstExprAs p value valueType) ts1 prec
+      (t', ts1) <- type' ts0
+      exprRight (AstExprAs p e t') ts1 prec
 exprRight left ts0'@(t : ts0) prec =
   case precInfix t of
     Right (precInfixL, precInfixR, op) ->
@@ -281,8 +280,8 @@ exprRight left ts0'@(t : ts0) prec =
 -- NOTE: See `https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html`.
 expr :: [Token] -> Int -> Either Pos (AstExpr, [Token])
 expr ts0 prec0 = do
-  r0 <- exprLeft ts0
-  case r0 of
+  r <- exprLeft ts0
+  case r of
     (e, []) -> Right (e, [])
     (left, ts1) -> exprRight left ts1 prec0
 
@@ -306,15 +305,15 @@ statement (TokenKeyword p "loop" : TokenLBrace _ : ts0) = do
     (t : _) -> Left $ getPos t
     [] -> Left 0
 statement (TokenIdent p "_" : TokenAssign _ : ts0) = do
-  (value, ts1) <- expr ts0 0
+  (e, ts1) <- expr ts0 0
   case ts1 of
-    (TokenSemiC _ : ts2) -> return (AstStmtDiscard p value, ts2)
+    (TokenSemiC _ : ts2) -> return (AstStmtDiscard p e, ts2)
     (t : _) -> Left $ getPos t
     [] -> Left 0
 statement (TokenIdent p ident : TokenAssign _ : ts0) = do
-  (value, ts1) <- expr ts0 0
+  (e, ts1) <- expr ts0 0
   case ts1 of
-    (TokenSemiC _ : ts2) -> return (AstStmtAssign p ident value, ts2)
+    (TokenSemiC _ : ts2) -> return (AstStmtAssign p ident e, ts2)
     (t : _) -> Left $ getPos t
     [] -> Left 0
 statement (TokenKeyword p "break" : TokenInt _ n : TokenSemiC _ : ts) =
@@ -326,32 +325,32 @@ statement (TokenKeyword _ "continue" : t : _) = Left $ getPos t
 statement (TokenKeyword p "return" : TokenSemiC _ : ts) =
   Right (AstStmtRet p Nothing, ts)
 statement (TokenKeyword p "return" : ts0) = do
-  (value, ts1) <- expr ts0 0
+  (e, ts1) <- expr ts0 0
   case ts1 of
-    (TokenSemiC _ : ts2) -> return (AstStmtRet p (Just value), ts2)
+    (TokenSemiC _ : ts2) -> return (AstStmtRet p (Just e), ts2)
     (t : _) -> Left $ getPos t
     [] -> Left 0
 statement ts0@(t0 : _) = do
-  (value1, ts1) <- expr ts0 0
-  case (value1, ts1) of
+  (e1, ts1) <- expr ts0 0
+  case (e1, ts1) of
     (AstExprRead p base offset, TokenAssign _ : ts2) -> do
-      (value3, ts3) <- expr ts2 0
+      (e3, ts3) <- expr ts2 0
       case ts3 of
-        (TokenSemiC _ : ts4) -> Right (AstStmtSave p base offset value3, ts4)
+        (TokenSemiC _ : ts4) -> Right (AstStmtSave p base offset e3, ts4)
         (t1 : _) -> Left $ getPos t1
         [] -> Left 0
-    (_, TokenSemiC _ : ts2) -> Right (AstStmtEffect (getPos t0) value1, ts2)
+    (_, TokenSemiC _ : ts2) -> Right (AstStmtEffect (getPos t0) e1, ts2)
     (_, t1 : _) -> Left $ getPos t1
     (_, []) -> Left 0
 
 statements :: [Token] -> Either Pos ([AstStmt], [Token])
 statements ts0 = do
-  (x, ts1) <- statement ts0
+  (s, ts1) <- statement ts0
   case ts1 of
-    (TokenRBrace _ : _) -> return ([x], ts1)
+    (TokenRBrace _ : _) -> return ([s], ts1)
     ts2 -> do
-      (xs, ts3) <- statements ts2
-      return (x : xs, ts3)
+      (ss, ts3) <- statements ts2
+      return (s : ss, ts3)
 
 func :: [Token] -> Either Pos (AstPreFunc, [Token])
 func [] = Left 0
