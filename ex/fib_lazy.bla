@@ -34,8 +34,8 @@ lazy_get_args(l addr) :: addr {
 }
 
 lazy_force(l addr) :: addr {
-    if (!lazy_get_cached(l)) {
-        lazy_set_result(l, (lazy_get_func(l))(lazy_get_args(l)));
+    if !lazy_get_cached(l) {
+        lazy_set_result(l, lazy_get_func(l)(lazy_get_args(l)));
         lazy_set_cached(l, 1);
     }
     return l[1] as addr;
