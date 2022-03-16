@@ -1,0 +1,9 @@
+main() {
+    loop {
+        break 0;
+        x = 1;
+    }
+    @print_i32(x);
+    @print_char(10);
+    return;
+}

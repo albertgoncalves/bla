@@ -96,6 +96,22 @@ class Tests(TestCase):
             "  ex/type_error.bla:12:16 [ type error ]\n",
         )
 
+    def test_unreachable_break(self):
+        self.into_test(
+            "unreachable_break",
+            1,
+            "",
+            "  ex/unreachable_break.bla:4:9 [ pre-compile error ]\n",
+        )
+
+    def test_unreachable_return(self):
+        self.into_test(
+            "unreachable_return",
+            1,
+            "",
+            "  ex/unreachable_return.bla:7:5 [ pre-compile error ]\n",
+        )
+
 
 if __name__ == "__main__":
     main()
