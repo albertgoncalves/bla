@@ -124,21 +124,23 @@ static void push_thread(Thread* thread, u32 x) {
     thread->stack.nodes[thread->stack.top++].as_u32 = x;
 }
 
-static void inst_halt(Memory* memory, Thread* thread) {
+static bool inst_halt(Memory* memory, Thread* thread) {
     EXIT_IF(memory->threads_alive == 0);
     thread->alive = false;
     memory->threads_stack[(CAP_THREADS - --memory->threads_alive) - 1] =
         thread;
+    return false; // NOTE: Let's signal we should switch to another thread.
 }
 
-static void inst_push(Program program, Thread* thread) {
+static bool inst_push(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 x = program.insts[thread->insts_index++];
     EXIT_IF(CAP_STACK <= thread->stack.top);
     thread->stack.nodes[thread->stack.top++].as_u32 = x;
+    return true; // NOTE: Let's signal we can continue executing this thread.
 }
 
-static void inst_copy(Program program, Thread* thread) {
+static bool inst_copy(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 offset = program.insts[thread->insts_index++];
@@ -146,9 +148,10 @@ static void inst_copy(Program program, Thread* thread) {
     Node node = thread->stack.nodes[(thread->stack.top - 1) - offset];
     EXIT_IF(CAP_STACK <= thread->stack.top);
     thread->stack.nodes[thread->stack.top++].as_u32 = node.as_u32;
+    return true;
 }
 
-static void inst_store(Program program, Thread* thread) {
+static bool inst_store(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     Node node = thread->stack.nodes[--thread->stack.top];
     EXIT_IF(program.insts_len <= thread->insts_index);
@@ -156,53 +159,60 @@ static void inst_store(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     EXIT_IF((thread->stack.top - 1) < offset);
     thread->stack.nodes[(thread->stack.top - 1) - offset].as_u32 = node.as_u32;
+    return true;
 }
 
-static void inst_drop(Program program, Thread* thread) {
+static bool inst_drop(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 n = program.insts[thread->insts_index++];
     EXIT_IF(n == 0);
     EXIT_IF(thread->stack.top < n);
     thread->stack.top -= n;
+    return true;
 }
 
-static void inst_rsrv(Program program, Thread* thread) {
+static bool inst_rsrv(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 n = program.insts[thread->insts_index++];
     EXIT_IF(n == 0);
     thread->stack.top += n;
     EXIT_IF(CAP_STACK < thread->stack.top);
+    return true;
 }
 
-static void inst_swap(Thread* thread) {
+static bool inst_swap(Thread* thread) {
     EXIT_IF(thread->stack.top < 2);
     Node r = thread->stack.nodes[--thread->stack.top];
     Node l = thread->stack.nodes[--thread->stack.top];
     thread->stack.nodes[thread->stack.top++] = r;
     thread->stack.nodes[thread->stack.top++] = l;
+    return true;
 }
 
-static void inst_jump(Thread* thread) {
+static bool inst_jump(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     thread->insts_index = thread->stack.nodes[--thread->stack.top].as_u32;
+    return true;
 }
 
-static void inst_jifz(Thread* thread) {
+static bool inst_jifz(Thread* thread) {
     EXIT_IF(thread->stack.top < 2);
     Node condition = thread->stack.nodes[--thread->stack.top];
     Node jump      = thread->stack.nodes[--thread->stack.top];
     if (condition.as_u32 == 0) {
         thread->insts_index = jump.as_u32;
     }
+    return true;
 }
 
 #define INST_BINOP(f, op, type)                              \
-    static void f(Thread* thread) {                          \
+    static bool f(Thread* thread) {                          \
         EXIT_IF(thread->stack.top < 2);                      \
         Node r = thread->stack.nodes[--thread->stack.top];   \
         Node l = thread->stack.nodes[--thread->stack.top];   \
         thread->stack.nodes[thread->stack.top++].as_##type = \
             l.as_##type op r.as_##type;                      \
+        return true;                                         \
     }
 
 INST_BINOP(inst_add, +, i32)
@@ -212,16 +222,17 @@ INST_BINOP(inst_div, /, i32)
 INST_BINOP(inst_eq, ==, u32)
 
 #define INST_UNOP(f, op, type)                                        \
-    static void f(Thread* thread) {                                   \
+    static bool f(Thread* thread) {                                   \
         EXIT_IF(thread->stack.top == 0);                              \
         thread->stack.nodes[thread->stack.top - 1].as_##type =        \
             op(thread->stack.nodes[thread->stack.top - 1].as_##type); \
+        return true;                                                  \
     }
 
 INST_UNOP(inst_neg, -, i32)
 INST_UNOP(inst_not, !, u32)
 
-static void inst_alloc(Thread* thread, Heap* heap) {
+static bool inst_alloc(Thread* thread, Heap* heap) {
     EXIT_IF(CAP_HEAP <= heap->len);
     EXIT_IF(thread->stack.top == 0);
     u32 n = thread->stack.nodes[--thread->stack.top].as_u32;
@@ -229,9 +240,10 @@ static void inst_alloc(Thread* thread, Heap* heap) {
     thread->stack.nodes[thread->stack.top++].as_u32 = heap->len;
     EXIT_IF(CAP_HEAP < (heap->len + n));
     heap->len += n;
+    return true;
 }
 
-static void inst_save(Thread* thread, Heap* heap) {
+static bool inst_save(Thread* thread, Heap* heap) {
     EXIT_IF(thread->stack.top < 3);
     i32 offset     = thread->stack.nodes[--thread->stack.top].as_i32;
     i32 base       = thread->stack.nodes[--thread->stack.top].as_i32;
@@ -239,9 +251,10 @@ static void inst_save(Thread* thread, Heap* heap) {
     EXIT_IF(heap_index < 0);
     EXIT_IF(CAP_HEAP <= heap_index);
     heap->buffer[heap_index] = thread->stack.nodes[--thread->stack.top].as_u32;
+    return true;
 }
 
-static void inst_read(Thread* thread, Heap* heap) {
+static bool inst_read(Thread* thread, Heap* heap) {
     EXIT_IF(thread->stack.top < 2);
     i32 offset     = thread->stack.nodes[--thread->stack.top].as_i32;
     i32 base       = thread->stack.nodes[--thread->stack.top].as_i32;
@@ -249,16 +262,18 @@ static void inst_read(Thread* thread, Heap* heap) {
     EXIT_IF(heap_index < 0);
     EXIT_IF(CAP_HEAP <= heap_index);
     thread->stack.nodes[thread->stack.top++].as_u32 = heap->buffer[heap_index];
+    return true;
 }
 
-static void inst_hlen(Thread* thread, Heap* heap) {
+static bool inst_hlen(Thread* thread, Heap* heap) {
     EXIT_IF(thread->stack.top == 0);
     u32 heap_len = thread->stack.nodes[--thread->stack.top].as_u32;
     EXIT_IF(CAP_HEAP < heap_len);
     heap->len = heap_len;
+    return true;
 }
 
-static void inst_spawn(Memory* memory, Thread* thread_parent) {
+static bool inst_spawn(Memory* memory, Thread* thread_parent) {
     EXIT_IF(CAP_THREADS <= memory->threads_alive);
     EXIT_IF(thread_parent->stack.top < 4);
     u32 func = thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
@@ -272,19 +287,22 @@ static void inst_spawn(Memory* memory, Thread* thread_parent) {
     push_thread(thread_child, addr);
     push_thread(thread_child, func);
     thread_parent->insts_index = jump_parent;
+    return true;
 }
 
-static void inst_prch(Thread* thread) {
+static bool inst_prch(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     putchar(thread->stack.nodes[--thread->stack.top].as_i32);
+    return true;
 }
 
-static void inst_pri32(Thread* thread) {
+static bool inst_pri32(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     printf("%d", thread->stack.nodes[--thread->stack.top].as_i32);
+    return true;
 }
 
-static void step(Memory* memory, Thread* thread) {
+static bool step(Memory* memory, Thread* thread) {
     EXIT_IF(memory->program.insts_len <= thread->insts_index);
     switch (static_cast<Inst>(memory->program.insts[thread->insts_index++])) {
     case INST_HALT: {
@@ -379,7 +397,9 @@ i32 main(i32 n, const char** args) {
                 if (!thread->alive) {
                     break;
                 }
-                step(memory, thread);
+                if (!step(memory, thread)) {
+                    break;
+                }
             }
         }
     }
