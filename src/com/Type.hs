@@ -157,6 +157,7 @@ intrinsics =
     ( "@spawn",
       Sig 0 [AstTypeFunc 0 [AstTypeAddr 0] Nothing, AstTypeAddr 0] Nothing
     ),
+    ("@sleep_ms", Sig 0 [AstTypeI32 0] Nothing),
     ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
     ("@print_i32", Sig 0 [AstTypeI32 0] Nothing)
   ]

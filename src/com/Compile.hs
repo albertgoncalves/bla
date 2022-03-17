@@ -27,6 +27,7 @@ data Inst
   | InstRead
   | InstHlen
   | InstSpawn
+  | InstSlpMs
   | InstPrCh
   | InstPrI32
   | PreInstLabelSet String
@@ -137,6 +138,8 @@ compileExpr context (AstExprCall _ (AstExprVar _ "@alloc_heap") [arg]) =
   appendContextInsts (compileExpr context arg) [InstAlloc]
 compileExpr context (AstExprCall _ (AstExprVar _ "@set_heap_len") [arg]) =
   appendContextInsts (compileExpr context arg) [InstHlen]
+compileExpr context (AstExprCall _ (AstExprVar _ "@sleep_ms") [arg]) =
+  appendContextInsts (compileExpr context arg) [InstSlpMs]
 compileExpr
   context0
   (AstExprCall _ (AstExprVar _ "@spawn") [argFunc, argAddr]) =
