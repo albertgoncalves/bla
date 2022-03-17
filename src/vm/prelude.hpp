@@ -16,7 +16,11 @@ typedef uint64_t u64;
 typedef struct timespec Time;
 typedef struct stat     FileStat;
 
+#define U64_MAX 0xFFFFFFFFFFFFFFFF
+#define U32_MAX 0xFFFFFFFF
+
 #define SECOND_TO_MICRO 1000000
+#define MILLI_TO_MICRO  1000
 #define MICRO_TO_NANO   1000
 
 #define OK    0
