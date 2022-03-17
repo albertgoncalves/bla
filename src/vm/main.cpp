@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #define CAP_STACK   (1 << 12)
 #define CAP_THREADS (1 << 4)
