@@ -1,3 +1,9 @@
+println_i32(x i32) {
+    @print_i32(x);
+    @print_char(10);
+    return;
+}
+
 f(n addr) {
     @sleep_ms(n as i32);
     i = 0;
@@ -7,8 +13,7 @@ f(n addr) {
         }
         i = i + 1;
     }
-    @print_i32(n as i32);
-    @print_char(10);
+    println_i32(n as i32);
     return;
 }
 
@@ -16,11 +21,14 @@ main() {
     i = 0;
     n = 250;
     loop {
-        if i == 9 {
+        if i == 8 {
             break 0;
         }
         @spawn(f, (i * n) as addr);
         i = i + 1;
     }
+    m = i * n;
+    @sleep_ms(m);
+    println_i32(m);
     return;
 }
