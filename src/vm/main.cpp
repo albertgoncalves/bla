@@ -73,6 +73,7 @@ struct Memory {
     Thread  threads[CAP_THREADS];
     Thread* threads_stack[CAP_THREADS];
     u32     threads_alive;
+    u32     threads_sleeping;
     Program program;
 };
 
@@ -293,11 +294,12 @@ static bool inst_spawn(Memory* memory, Thread* thread_parent) {
     return true;
 }
 
-static bool inst_slpms(Thread* thread, Time* time) {
+static bool inst_slpms(Memory* memory, Thread* thread, Time* time) {
     EXIT_IF(thread->stack.top == 0);
     u32 milliseconds = thread->stack.nodes[--thread->stack.top].as_u32;
     thread->wake_at  = get_monotonic(time) + (milliseconds * MILLI_TO_MICRO);
     thread->sleeping = true;
+    ++memory->threads_sleeping;
     return false;
 }
 
@@ -380,7 +382,7 @@ static bool step(Memory* memory, Thread* thread, Time* time) {
         return inst_spawn(memory, thread);
     }
     case INST_SLPMS: {
-        return inst_slpms(thread, time);
+        return inst_slpms(memory, thread, time);
     }
     case INST_PRCH: {
         return inst_prch(thread);
@@ -406,7 +408,28 @@ i32 main(i32 n, const char** args) {
     memory->program     = read_program(args[1]);
     Time time;
     while (0 < memory->threads_alive) {
-        u32 any_awake = 0;
+        if (memory->threads_sleeping == memory->threads_alive) {
+            u64 next_wake_at = U64_MAX;
+            for (u32 i = 0; i < CAP_THREADS; ++i) {
+                Thread* thread = &memory->threads[i];
+                if (!thread->alive) {
+                    continue;
+                }
+                if (!thread->sleeping) {
+                    continue;
+                }
+                if (thread->wake_at < next_wake_at) {
+                    next_wake_at = thread->wake_at;
+                }
+            }
+            EXIT_IF(next_wake_at == U64_MAX);
+            u64 now = get_monotonic(&time);
+            if (now < next_wake_at) {
+                u64 microseconds = next_wake_at - now;
+                EXIT_IF(U32_MAX < microseconds);
+                EXIT_IF(usleep(static_cast<u32>(microseconds)));
+            }
+        }
         for (u32 i = 0; i < CAP_THREADS; ++i) {
             Thread* thread = &memory->threads[i];
             if (!thread->alive) {
@@ -417,31 +440,15 @@ i32 main(i32 n, const char** args) {
                     continue;
                 }
                 thread->sleeping = false;
+                --memory->threads_sleeping;
             }
-            ++any_awake;
-            for (u32 j = 0; j < THREAD_STEPS; ++j) {
+            for (u32 _ = 0; _ < THREAD_STEPS; ++_) {
                 // NOTE: If `step(...)` returns `false` we should switch to
                 // another thread.
                 if (!step(memory, thread, &time)) {
                     break;
                 }
             }
-        }
-        if (any_awake == 0) {
-            u64 next_wake_at = U64_MAX;
-            for (u32 i = 0; i < CAP_THREADS; ++i) {
-                Thread* thread = &memory->threads[i];
-                if (!thread->sleeping) {
-                    continue;
-                }
-                if (thread->wake_at < next_wake_at) {
-                    next_wake_at = thread->wake_at;
-                }
-            }
-            EXIT_IF(next_wake_at == U64_MAX);
-            u64 microseconds = next_wake_at - get_monotonic(&time);
-            EXIT_IF(U32_MAX < microseconds);
-            EXIT_IF(usleep(static_cast<u32>(microseconds)));
         }
     }
     EXIT_IF(thread_main->stack.top != 0);
