@@ -1,0 +1,31 @@
+f(x i32, n i32) {
+    i = 0;
+    loop {
+        if i == n {
+            return;
+        }
+        @print_char((x & 255 << i * 8) >> i * 8);
+        i = i + 1;
+    }
+    return;
+}
+
+main() {
+    m = @alloc_heap(4);
+    m[0] = 1819043144;
+    m[1] = 179554087;
+    m[2] = -313768448;
+    m[3] = -1684826190;
+    i = 0;
+    x = 0;
+    loop {
+        x = x + m[i];
+        if i == 3 {
+            f(x, 2);
+            return;
+        }
+        f(x, 4);
+        i = i + 1;
+    }
+    return;
+}

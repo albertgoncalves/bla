@@ -9,6 +9,10 @@ data BinOp
   | BinOpSub
   | BinOpMul
   | BinOpDiv
+  | BinOpAnd
+  | BinOpOr
+  | BinOpShl
+  | BinOpShr
   | BinOpEq
 
 type Pos = Int

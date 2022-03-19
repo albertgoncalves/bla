@@ -58,6 +58,9 @@ class Tests(TestCase):
     def test_heap(self):
         self.into_test("heap", 0, "-2\n12\n16\n", "")
 
+    def test_hello_world(self):
+        self.into_test("hello_world", 0, "Hello, world!\n", "")
+
     def test_more_nested_calls(self):
         self.into_test("more_nested_calls", 0, "0\n1\n", "")
 

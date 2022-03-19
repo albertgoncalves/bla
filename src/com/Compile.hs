@@ -19,9 +19,13 @@ data Inst
   | InstSub
   | InstMul
   | InstDiv
-  | InstEq
+  | InstAnd
+  | InstOr
+  | InstShl
+  | InstShr
   | InstNeg
   | InstNot
+  | InstEq
   | InstAlloc
   | InstSave
   | InstRead
@@ -64,6 +68,10 @@ binOpToInst BinOpAdd = InstAdd
 binOpToInst BinOpSub = InstSub
 binOpToInst BinOpMul = InstMul
 binOpToInst BinOpDiv = InstDiv
+binOpToInst BinOpAnd = InstAnd
+binOpToInst BinOpOr = InstOr
+binOpToInst BinOpShl = InstShl
+binOpToInst BinOpShr = InstShr
 binOpToInst BinOpEq = InstEq
 
 incrStackOffset :: Context -> Context
