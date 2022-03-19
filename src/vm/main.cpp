@@ -234,6 +234,10 @@ INST_BINOP(inst_add, +, i32)
 INST_BINOP(inst_sub, -, i32)
 INST_BINOP(inst_mul, *, i32)
 INST_BINOP(inst_div, /, i32)
+INST_BINOP(inst_and, &, u32)
+INST_BINOP(inst_or, |, u32)
+INST_BINOP(inst_shl, <<, u32)
+INST_BINOP(inst_shr, >>, u32)
 INST_BINOP(inst_eq, ==, u32)
 
 #define INST_UNOP(f, op, type)                                        \
@@ -368,14 +372,26 @@ static bool step(Memory* memory, Thread* thread, Time* time) {
     case INST_DIV: {
         return inst_div(thread);
     }
-    case INST_EQ: {
-        return inst_eq(thread);
+    case INST_AND: {
+        return inst_and(thread);
+    }
+    case INST_OR: {
+        return inst_or(thread);
+    }
+    case INST_SHL: {
+        return inst_shl(thread);
+    }
+    case INST_SHR: {
+        return inst_shr(thread);
     }
     case INST_NEG: {
         return inst_neg(thread);
     }
     case INST_NOT: {
         return inst_not(thread);
+    }
+    case INST_EQ: {
+        return inst_eq(thread);
     }
     case INST_ALLOC: {
         return inst_alloc(thread, &memory->heap);
