@@ -21,19 +21,30 @@ enum Inst {
     INST_SWAP  = 6,
     INST_JUMP  = 7,
     INST_JIFZ  = 8,
-    INST_ADD   = 9,
-    INST_SUB   = 10,
-    INST_MUL   = 11,
-    INST_DIV   = 12,
-    INST_EQ    = 13,
-    INST_NEG   = 14,
-    INST_NOT   = 15,
-    INST_ALLOC = 16,
-    INST_SAVE  = 17,
-    INST_READ  = 18,
-    INST_HLEN  = 19,
-    INST_SPAWN = 20,
-    INST_SLPMS = 21,
+
+    INST_ADD = 9,
+    INST_SUB = 10,
+    INST_MUL = 11,
+    INST_DIV = 12,
+
+    INST_AND = 13,
+    INST_OR  = 14,
+    INST_SHL = 15,
+    INST_SHR = 16,
+
+    INST_NEG = 20,
+    INST_NOT = 21,
+
+    INST_EQ = 30,
+
+    INST_ALLOC = 40,
+    INST_SAVE  = 41,
+    INST_READ  = 42,
+    INST_HLEN  = 43,
+
+    INST_SPAWN = 50,
+    INST_SLPMS = 51,
+
     INST_PRCH  = 100,
     INST_PRI32 = 101,
 };
