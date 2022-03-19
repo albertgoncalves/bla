@@ -47,6 +47,8 @@ enum Inst {
 
     INST_PRCH  = 100,
     INST_PRI32 = 101,
+
+    INST_EXIT = 200,
 };
 
 STATIC_ASSERT(sizeof(Inst) <= sizeof(u32));
@@ -330,6 +332,11 @@ static bool inst_pri32(Thread* thread) {
     return true;
 }
 
+[[noreturn]] static void inst_exit(Thread* thread) {
+    EXIT_IF(thread->stack.top == 0);
+    _exit(thread->stack.nodes[--thread->stack.top].as_i32);
+}
+
 static bool step(Memory* memory, Thread* thread, Time* time) {
     EXIT_IF(memory->program.insts_len <= thread->insts_index);
     switch (static_cast<Inst>(memory->program.insts[thread->insts_index++])) {
@@ -416,6 +423,9 @@ static bool step(Memory* memory, Thread* thread, Time* time) {
     }
     case INST_PRI32: {
         return inst_pri32(thread);
+    }
+    case INST_EXIT: {
+        inst_exit(thread);
     }
     default:
         EXIT();

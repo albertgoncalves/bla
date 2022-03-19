@@ -1,0 +1,13 @@
+main() {
+    x = 0;
+    loop {
+        x = x + 12;
+        loop {
+            x = x * 10 + 3;
+            if 1 {
+                @exit(x);
+            }
+        }
+    }
+    return;
+}

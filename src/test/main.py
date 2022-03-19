@@ -43,6 +43,9 @@ class Tests(TestCase):
     def test_empty_block(self):
         self.into_test("empty_block", 0, "1\n", "")
 
+    def test_exit(self):
+        self.into_test("exit", 123, "", "")
+
     def test_fib_lazy(self):
         self.into_test("fib_lazy", 0, "1836311903\n", "")
 

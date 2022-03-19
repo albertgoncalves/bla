@@ -34,6 +34,7 @@ toInt InstSpawn = [50]
 toInt InstSlpMs = [51]
 toInt InstPrCh = [100]
 toInt InstPrI32 = [101]
+toInt InstExit = [200]
 toInt (PreInstLabelSet _) = undefined
 toInt (PreInstLabelPush _) = undefined
 

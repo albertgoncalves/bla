@@ -159,7 +159,8 @@ intrinsics =
     ),
     ("@sleep_ms", Sig 0 [AstTypeI32 0] Nothing),
     ("@print_char", Sig 0 [AstTypeI32 0] Nothing),
-    ("@print_i32", Sig 0 [AstTypeI32 0] Nothing)
+    ("@print_i32", Sig 0 [AstTypeI32 0] Nothing),
+    ("@exit", Sig 0 [AstTypeI32 0] Nothing)
   ]
 
 checkFuncs :: [AstPreFunc] -> Either (String, Pos) [AstPreFunc]
