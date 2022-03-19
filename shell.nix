@@ -1,12 +1,12 @@
 with import <nixpkgs> {};
-mkShell.override { stdenv = llvmPackages_12.stdenv; } {
+mkShell.override { stdenv = llvmPackages_14.stdenv; } {
     buildInputs = [
         ghc
         glibcLocales
         gmp
         hlint
         libffi
-        llvmPackages_12.lld
+        llvmPackages_14.lld
         mold
         ormolu
         python3Packages.flake8
