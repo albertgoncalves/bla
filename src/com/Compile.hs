@@ -34,6 +34,7 @@ data Inst
   | InstSlpMs
   | InstPrCh
   | InstPrI32
+  | InstExit
   | PreInstLabelSet String
   | PreInstLabelPush String
 
@@ -148,6 +149,8 @@ compileExpr context (AstExprCall _ (AstExprVar _ "@set_heap_len") [arg]) =
   appendContextInsts (compileExpr context arg) [InstHlen]
 compileExpr context (AstExprCall _ (AstExprVar _ "@sleep_ms") [arg]) =
   appendContextInsts (compileExpr context arg) [InstSlpMs]
+compileExpr context (AstExprCall _ (AstExprVar _ "@exit") [arg]) =
+  appendContextInsts (compileExpr context arg) [InstExit]
 compileExpr
   context0
   (AstExprCall _ (AstExprVar _ "@spawn") [argFunc, argAddr]) =
