@@ -1,7 +1,7 @@
 module Compile where
 
 import Ast (AstExpr (..), AstFunc (..), AstStmt (..), BinOp (..), UnOp (..))
-import Data.List (foldl')
+import Data.List (foldl', scanl')
 import Data.Map (Map, empty, fromList, member, (!))
 import Text.Printf (printf)
 
@@ -370,7 +370,7 @@ weightInst (PreInstLabelSet _) = 0
 weightInst _ = 1
 
 getLabels :: [Inst] -> Map String Int
-getLabels xs = fromList $ f $ zip xs $ scanl (+) 0 $ map weightInst xs
+getLabels xs = fromList $ f $ zip xs $ scanl' (+) 0 $ map weightInst xs
   where
     f [] = []
     f ((PreInstLabelSet x, n) : xs') = (x, n) : f xs'
