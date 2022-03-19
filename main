@@ -28,6 +28,7 @@ set -euo pipefail
         -Widentities
         -Wincomplete-record-updates
         -Wincomplete-uni-patterns
+        -with-rtsopts "-A8m"
         -Wmonomorphism-restriction
         -Wpartial-fields
         -Wredundant-constraints
