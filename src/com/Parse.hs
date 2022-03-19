@@ -37,6 +37,10 @@ data Token
   | TokenSub Pos
   | TokenMul Pos
   | TokenDiv Pos
+  | TokenAnd Pos
+  | TokenOr Pos
+  | TokenShl Pos
+  | TokenShr Pos
   | TokenInt Pos Int
   | TokenIdent Pos String
   | TokenIntrin Pos String
@@ -64,6 +68,10 @@ getPos (TokenAdd p) = p
 getPos (TokenSub p) = p
 getPos (TokenMul p) = p
 getPos (TokenDiv p) = p
+getPos (TokenAnd p) = p
+getPos (TokenOr p) = p
+getPos (TokenShl p) = p
+getPos (TokenShr p) = p
 getPos (TokenInt p _) = p
 getPos (TokenIdent p _) = p
 getPos (TokenIntrin p _) = p
@@ -116,6 +124,8 @@ token cs'@('-' : '>' : cs) = Right (TokenArrow $ length cs', cs)
 token cs'@(':' : ':' : cs) = Right (TokenDoubleC $ length cs', cs)
 token cs'@('=' : '=' : cs) = Right (TokenEq $ length cs', cs)
 token cs'@('=' : cs) = Right (TokenAssign $ length cs', cs)
+token cs'@('>' : '>' : cs) = Right (TokenShr $ length cs', cs)
+token cs'@('<' : '<' : cs) = Right (TokenShl $ length cs', cs)
 token cs'@('<' : cs) = Right (TokenLT $ length cs', cs)
 token cs'@('>' : cs) = Right (TokenGT $ length cs', cs)
 token cs'@('!' : cs) = Right (TokenBang $ length cs', cs)
@@ -123,6 +133,8 @@ token cs'@('+' : cs) = Right (TokenAdd $ length cs', cs)
 token cs'@('-' : cs) = Right (TokenSub $ length cs', cs)
 token cs'@('*' : cs) = Right (TokenMul $ length cs', cs)
 token cs'@('/' : cs) = Right (TokenDiv $ length cs', cs)
+token cs'@('&' : cs) = Right (TokenAnd $ length cs', cs)
+token cs'@('|' : cs) = Right (TokenOr $ length cs', cs)
 token cs'@('@' : cs) =
   let (as, bs) = span isIdent cs
    in Right (TokenIntrin (length cs') ('@' : as), bs)
@@ -191,26 +203,30 @@ type' (t : _) = Left $ getPos t
 type' [] = Left 0
 
 precPrefix :: Token -> Either Pos (Int, UnOp)
-precPrefix (TokenBang _) = Right (9, UnOpBang)
-precPrefix (TokenSub _) = Right (9, UnOpMinus)
+precPrefix (TokenBang _) = Right (13, UnOpBang)
+precPrefix (TokenSub _) = Right (13, UnOpMinus)
 precPrefix t = Left $ getPos t
 
 precInfix :: Token -> Either Pos (Int, Int, BinOp)
-precInfix (TokenAdd _) = Right (5, 6, BinOpAdd)
-precInfix (TokenSub _) = Right (5, 6, BinOpSub)
-precInfix (TokenMul _) = Right (7, 8, BinOpMul)
-precInfix (TokenDiv _) = Right (7, 8, BinOpDiv)
-precInfix (TokenEq _) = Right (3, 4, BinOpEq)
+precInfix (TokenAdd _) = Right (9, 10, BinOpAdd)
+precInfix (TokenSub _) = Right (9, 10, BinOpSub)
+precInfix (TokenMul _) = Right (11, 12, BinOpMul)
+precInfix (TokenDiv _) = Right (11, 12, BinOpDiv)
+precInfix (TokenShl _) = Right (7, 8, BinOpShl)
+precInfix (TokenShr _) = Right (7, 8, BinOpShr)
+precInfix (TokenEq _) = Right (5, 6, BinOpEq)
+precInfix (TokenAnd _) = Right (3, 4, BinOpAnd)
+precInfix (TokenOr _) = Right (1, 2, BinOpOr)
 precInfix t = Left $ getPos t
 
 precParen :: Int
-precParen = 11
+precParen = 15
 
 precBracket :: Int
-precBracket = 11
+precBracket = 15
 
 precAs :: Int
-precAs = 11
+precAs = 15
 
 exprLeft :: [Token] -> Either Pos (AstExpr, [Token])
 exprLeft [] = Left 0
