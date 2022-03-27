@@ -1,4 +1,4 @@
-#include "prelude.hpp"
+#include "prelude.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 
 #define THREAD_STEPS 100
 
-enum Inst {
+typedef enum {
     INST_HALT  = 0,
     INST_PUSH  = 1,
     INST_COPY  = 2,
@@ -49,58 +49,58 @@ enum Inst {
     INST_PRI32 = 101,
 
     INST_EXIT = 200,
-};
+} Inst;
 
 STATIC_ASSERT(sizeof(Inst) <= sizeof(u32));
 
-union Node {
+typedef union {
     i32 as_i32;
     u32 as_u32;
-};
+} Node;
 
-struct Stack {
+typedef struct {
     Node nodes[CAP_STACK];
     u32  top;
-};
+} Stack;
 
-struct Heap {
+typedef struct {
     u32 buffer[CAP_HEAP];
     u32 len;
-};
+} Heap;
 
-struct Thread {
+typedef struct {
     Stack stack;
     u32   insts_index;
-    bool  alive;
-    bool  sleeping;
+    Bool  alive;
+    Bool  sleeping;
     u64   wake_at;
-};
+} Thread;
 
-struct Program {
+typedef struct {
     const u32* insts;
     u32        insts_len;
-};
+} Program;
 
-struct Memory {
+typedef struct {
     Heap    heap;
     Thread  threads[CAP_THREADS];
     Thread* threads_stack[CAP_THREADS];
     u32     threads_alive;
     u32     threads_sleeping;
     Program program;
-};
+} Memory;
 
 static Memory* alloc_memory() {
-    void* address = mmap(null,
+    void* address = mmap(NULL,
                          sizeof(Memory),
                          PROT_READ | PROT_WRITE,
                          MAP_ANONYMOUS | MAP_PRIVATE,
                          -1,
                          0);
     EXIT_IF(address == MAP_FAILED);
-    Memory* memory = reinterpret_cast<Memory*>(address);
+    Memory* memory = (Memory*)address;
     for (u32 i = 0; i < CAP_THREADS; ++i) {
-        memory->threads[i].alive = false;
+        memory->threads[i].alive = FALSE;
         memory->threads_stack[i] = &memory->threads[i];
     }
     return memory;
@@ -111,7 +111,7 @@ static Thread* alloc_thread(Memory* memory, u32 insts_index) {
     Thread* thread =
         memory->threads_stack[(CAP_THREADS - memory->threads_alive++) - 1];
     thread->insts_index = insts_index;
-    thread->alive       = true;
+    thread->alive       = TRUE;
     return thread;
 }
 
@@ -121,16 +121,12 @@ static Program read_program(const char* path) {
     FileStat stat;
     EXIT_IF(fstat(file, &stat) < 0)
     Program program;
-    program.insts_len = static_cast<u32>(stat.st_size) / sizeof(u32);
+    program.insts_len = ((u32)stat.st_size) / sizeof(u32);
     {
-        void* address = mmap(null,
-                             static_cast<u32>(stat.st_size),
-                             PROT_READ,
-                             MAP_SHARED,
-                             file,
-                             0);
+        void* address =
+            mmap(NULL, (u32)stat.st_size, PROT_READ, MAP_SHARED, file, 0);
         EXIT_IF(address == MAP_FAILED);
-        program.insts = reinterpret_cast<u32*>(address);
+        program.insts = (u32*)address;
     }
     close(file);
     return program;
@@ -141,23 +137,23 @@ static void push_thread(Thread* thread, u32 x) {
     thread->stack.nodes[thread->stack.top++].as_u32 = x;
 }
 
-static bool inst_halt(Memory* memory, Thread* thread) {
+static Bool inst_halt(Memory* memory, Thread* thread) {
     EXIT_IF(memory->threads_alive == 0);
-    thread->alive = false;
+    thread->alive = FALSE;
     memory->threads_stack[(CAP_THREADS - --memory->threads_alive) - 1] =
         thread;
-    return false; // NOTE: Let's signal we should switch to another thread.
+    return FALSE; // NOTE: Let's signal we should switch to another thread.
 }
 
-static bool inst_push(Program program, Thread* thread) {
+static Bool inst_push(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 x = program.insts[thread->insts_index++];
     EXIT_IF(CAP_STACK <= thread->stack.top);
     thread->stack.nodes[thread->stack.top++].as_u32 = x;
-    return true; // NOTE: Let's signal we can continue executing this thread.
+    return TRUE; // NOTE: Let's signal we can continue executing this thread.
 }
 
-static bool inst_copy(Program program, Thread* thread) {
+static Bool inst_copy(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 offset = program.insts[thread->insts_index++];
@@ -165,10 +161,10 @@ static bool inst_copy(Program program, Thread* thread) {
     Node node = thread->stack.nodes[(thread->stack.top - 1) - offset];
     EXIT_IF(CAP_STACK <= thread->stack.top);
     thread->stack.nodes[thread->stack.top++].as_u32 = node.as_u32;
-    return true;
+    return TRUE;
 }
 
-static bool inst_store(Program program, Thread* thread) {
+static Bool inst_store(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     Node node = thread->stack.nodes[--thread->stack.top];
     EXIT_IF(program.insts_len <= thread->insts_index);
@@ -176,60 +172,60 @@ static bool inst_store(Program program, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     EXIT_IF((thread->stack.top - 1) < offset);
     thread->stack.nodes[(thread->stack.top - 1) - offset].as_u32 = node.as_u32;
-    return true;
+    return TRUE;
 }
 
-static bool inst_drop(Program program, Thread* thread) {
+static Bool inst_drop(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 n = program.insts[thread->insts_index++];
     EXIT_IF(n == 0);
     EXIT_IF(thread->stack.top < n);
     thread->stack.top -= n;
-    return true;
+    return TRUE;
 }
 
-static bool inst_rsrv(Program program, Thread* thread) {
+static Bool inst_rsrv(Program program, Thread* thread) {
     EXIT_IF(program.insts_len <= thread->insts_index);
     u32 n = program.insts[thread->insts_index++];
     EXIT_IF(n == 0);
     thread->stack.top += n;
     EXIT_IF(CAP_STACK < thread->stack.top);
-    return true;
+    return TRUE;
 }
 
-static bool inst_swap(Thread* thread) {
+static Bool inst_swap(Thread* thread) {
     EXIT_IF(thread->stack.top < 2);
     Node r = thread->stack.nodes[--thread->stack.top];
     Node l = thread->stack.nodes[--thread->stack.top];
     thread->stack.nodes[thread->stack.top++] = r;
     thread->stack.nodes[thread->stack.top++] = l;
-    return true;
+    return TRUE;
 }
 
-static bool inst_jump(Thread* thread) {
+static Bool inst_jump(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     thread->insts_index = thread->stack.nodes[--thread->stack.top].as_u32;
-    return true;
+    return TRUE;
 }
 
-static bool inst_jifz(Thread* thread) {
+static Bool inst_jifz(Thread* thread) {
     EXIT_IF(thread->stack.top < 2);
     Node condition = thread->stack.nodes[--thread->stack.top];
     Node jump      = thread->stack.nodes[--thread->stack.top];
     if (condition.as_u32 == 0) {
         thread->insts_index = jump.as_u32;
     }
-    return true;
+    return TRUE;
 }
 
 #define INST_BINOP(f, op, type)                              \
-    static bool f(Thread* thread) {                          \
+    static Bool f(Thread* thread) {                          \
         EXIT_IF(thread->stack.top < 2);                      \
         Node r = thread->stack.nodes[--thread->stack.top];   \
         Node l = thread->stack.nodes[--thread->stack.top];   \
         thread->stack.nodes[thread->stack.top++].as_##type = \
             l.as_##type op r.as_##type;                      \
-        return true;                                         \
+        return TRUE;                                         \
     }
 
 INST_BINOP(inst_add, +, i32)
@@ -243,17 +239,17 @@ INST_BINOP(inst_shr, >>, u32)
 INST_BINOP(inst_eq, ==, u32)
 
 #define INST_UNOP(f, op, type)                                        \
-    static bool f(Thread* thread) {                                   \
+    static Bool f(Thread* thread) {                                   \
         EXIT_IF(thread->stack.top == 0);                              \
         thread->stack.nodes[thread->stack.top - 1].as_##type =        \
             op(thread->stack.nodes[thread->stack.top - 1].as_##type); \
-        return true;                                                  \
+        return TRUE;                                                  \
     }
 
 INST_UNOP(inst_neg, -, i32)
 INST_UNOP(inst_not, !, u32)
 
-static bool inst_alloc(Thread* thread, Heap* heap) {
+static Bool inst_alloc(Thread* thread, Heap* heap) {
     EXIT_IF(CAP_HEAP <= heap->len);
     EXIT_IF(thread->stack.top == 0);
     u32 n = thread->stack.nodes[--thread->stack.top].as_u32;
@@ -261,10 +257,10 @@ static bool inst_alloc(Thread* thread, Heap* heap) {
     thread->stack.nodes[thread->stack.top++].as_u32 = heap->len;
     EXIT_IF(CAP_HEAP < (heap->len + n));
     heap->len += n;
-    return true;
+    return TRUE;
 }
 
-static bool inst_save(Thread* thread, Heap* heap) {
+static Bool inst_save(Thread* thread, Heap* heap) {
     EXIT_IF(thread->stack.top < 3);
     i32 offset     = thread->stack.nodes[--thread->stack.top].as_i32;
     i32 base       = thread->stack.nodes[--thread->stack.top].as_i32;
@@ -272,10 +268,10 @@ static bool inst_save(Thread* thread, Heap* heap) {
     EXIT_IF(heap_index < 0);
     EXIT_IF(CAP_HEAP <= heap_index);
     heap->buffer[heap_index] = thread->stack.nodes[--thread->stack.top].as_u32;
-    return true;
+    return TRUE;
 }
 
-static bool inst_read(Thread* thread, Heap* heap) {
+static Bool inst_read(Thread* thread, Heap* heap) {
     EXIT_IF(thread->stack.top < 2);
     i32 offset     = thread->stack.nodes[--thread->stack.top].as_i32;
     i32 base       = thread->stack.nodes[--thread->stack.top].as_i32;
@@ -283,18 +279,18 @@ static bool inst_read(Thread* thread, Heap* heap) {
     EXIT_IF(heap_index < 0);
     EXIT_IF(CAP_HEAP <= heap_index);
     thread->stack.nodes[thread->stack.top++].as_u32 = heap->buffer[heap_index];
-    return true;
+    return TRUE;
 }
 
-static bool inst_hlen(Thread* thread, Heap* heap) {
+static Bool inst_hlen(Thread* thread, Heap* heap) {
     EXIT_IF(thread->stack.top == 0);
     u32 heap_len = thread->stack.nodes[--thread->stack.top].as_u32;
     EXIT_IF(CAP_HEAP < heap_len);
     heap->len = heap_len;
-    return true;
+    return TRUE;
 }
 
-static bool inst_spawn(Memory* memory, Thread* thread_parent) {
+static Bool inst_spawn(Memory* memory, Thread* thread_parent) {
     EXIT_IF(CAP_THREADS <= memory->threads_alive);
     EXIT_IF(thread_parent->stack.top < 4);
     u32 func = thread_parent->stack.nodes[--thread_parent->stack.top].as_u32;
@@ -308,38 +304,38 @@ static bool inst_spawn(Memory* memory, Thread* thread_parent) {
     push_thread(thread_child, addr);
     push_thread(thread_child, func);
     thread_parent->insts_index = jump_parent;
-    return true;
+    return TRUE;
 }
 
-static bool inst_slpms(Memory* memory, Thread* thread, Time* time) {
+static Bool inst_slpms(Memory* memory, Thread* thread, Time* time) {
     EXIT_IF(thread->stack.top == 0);
     u32 milliseconds = thread->stack.nodes[--thread->stack.top].as_u32;
     thread->wake_at  = get_monotonic(time) + (milliseconds * MILLI_TO_MICRO);
-    thread->sleeping = true;
+    thread->sleeping = TRUE;
     ++memory->threads_sleeping;
-    return false;
+    return FALSE;
 }
 
-static bool inst_prch(Thread* thread) {
+static Bool inst_prch(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     putchar(thread->stack.nodes[--thread->stack.top].as_i32);
-    return true;
+    return TRUE;
 }
 
-static bool inst_pri32(Thread* thread) {
+static Bool inst_pri32(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     printf("%d", thread->stack.nodes[--thread->stack.top].as_i32);
-    return true;
+    return TRUE;
 }
 
-[[noreturn]] static void inst_exit(Thread* thread) {
+__attribute__((noreturn)) static void inst_exit(Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     _exit(thread->stack.nodes[--thread->stack.top].as_i32);
 }
 
-static bool step(Memory* memory, Thread* thread, Time* time) {
+static Bool step(Memory* memory, Thread* thread, Time* time) {
     EXIT_IF(memory->program.insts_len <= thread->insts_index);
-    switch (static_cast<Inst>(memory->program.insts[thread->insts_index++])) {
+    switch ((Inst)memory->program.insts[thread->insts_index++]) {
     case INST_HALT: {
         return inst_halt(memory, thread);
     }
@@ -436,7 +432,7 @@ i32 main(i32 n, const char** args) {
     if (n < 2) {
         fprintf(stderr,
                 "$ %s path/to/bytecode.blc\n",
-                realpath(args[0], null));
+                realpath(args[0], NULL));
         _exit(ERROR);
     }
     EXIT_IF(n < 2);
@@ -464,7 +460,7 @@ i32 main(i32 n, const char** args) {
             if (now < next_wake_at) {
                 u64 microseconds = next_wake_at - now;
                 EXIT_IF(U32_MAX < microseconds);
-                EXIT_IF(usleep(static_cast<u32>(microseconds)));
+                EXIT_IF(usleep((u32)microseconds));
             }
         }
         for (u32 i = 0; i < CAP_THREADS; ++i) {
@@ -476,11 +472,11 @@ i32 main(i32 n, const char** args) {
                 if (get_monotonic(&time) < thread->wake_at) {
                     continue;
                 }
-                thread->sleeping = false;
+                thread->sleeping = FALSE;
                 --memory->threads_sleeping;
             }
             for (u32 _ = 0; _ < THREAD_STEPS; ++_) {
-                // NOTE: If `step(...)` returns `false` we should switch to
+                // NOTE: If `step(...)` returns `FALSE` we should switch to
                 // another thread.
                 if (!step(memory, thread, &time)) {
                     break;

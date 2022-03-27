@@ -39,29 +39,24 @@ set -euo pipefail
 )
 (
     flags=(
+        -D_GNU_SOURCE
         "-ferror-limit=1"
-        -ffast-math
-        -fno-autolink
-        -fno-exceptions
-        -fno-math-errno
-        -fno-omit-frame-pointer
-        -fno-rtti
-        -fno-unwind-tables
         "-fsanitize=address"
         "-fsanitize=undefined"
         -fshort-enums
         "-march=native"
         -O1
-        "-std=c++11"
+        "-std=c99"
         -Werror
         -Weverything
-        -Wno-c++98-compat-pedantic
         -Wno-covered-switch-default
+        -Wno-declaration-after-statement
+        -Wno-disabled-macro-expansion
         -Wno-extra-semi-stmt
         -Wno-padded
-        -Wno-reserved-id-macro
+        -Wno-reserved-macro-identifier
     )
-    mold -run clang++ "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.cpp"
+    mold -run clang "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.c"
 )
 (
     python3 "$WD/src/test/main.py"

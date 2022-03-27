@@ -14,8 +14,8 @@
 !*.hs
 
 !src/vm/
-!*.hpp
-!*.cpp
+!*.h
+!*.c
 
 !src/test/
 !*.py

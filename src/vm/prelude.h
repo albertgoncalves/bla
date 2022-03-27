@@ -11,8 +11,6 @@ typedef int32_t i32;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-#define null nullptr
-
 typedef struct timespec Time;
 typedef struct stat     FileStat;
 
@@ -25,6 +23,11 @@ typedef struct stat     FileStat;
 
 #define OK    0
 #define ERROR 1
+
+typedef enum {
+    FALSE = 0,
+    TRUE  = 1,
+} Bool;
 
 #define EXIT()                                                       \
     {                                                                \
@@ -45,12 +48,12 @@ typedef struct stat     FileStat;
         EXIT_WITH(#condition); \
     }
 
-#define STATIC_ASSERT(condition) static_assert(condition, "!(" #condition ")")
+#define STATIC_ASSERT(condition) _Static_assert(condition, "!(" #condition ")")
 
 static u64 get_monotonic(Time* time) {
     EXIT_IF(clock_gettime(CLOCK_MONOTONIC, time));
-    return (static_cast<u64>(time->tv_sec) * SECOND_TO_MICRO) +
-           (static_cast<u64>(time->tv_nsec) / MICRO_TO_NANO);
+    return (((u64)time->tv_sec) * SECOND_TO_MICRO) +
+           (((u64)time->tv_nsec) / MICRO_TO_NANO);
 }
 
 #endif

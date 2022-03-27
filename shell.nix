@@ -20,4 +20,5 @@ mkShell.override { stdenv = llvmPackages_14.stdenv; } {
         export LD_LIBRARY_PATH="$APPEND_LIBRARY_PATH:$LD_LIBRARY_PATH"
         . .shellhook
     '';
+    hardeningDisable = [ "all" ];
 }
