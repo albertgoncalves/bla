@@ -50,7 +50,7 @@ class Tests(TestCase):
         self.into_test("fib_lazy", 0, "1836311903\n", "")
 
     def test_fib_loop(self):
-        self.into_test("fib_loop", 0, "1836311903\n", "")
+        self.into_test("fib_loop", 0, "1134903170\n", "")
 
     def test_fib_rec(self):
         self.into_test("fib_rec", 0, "55\n", "")
