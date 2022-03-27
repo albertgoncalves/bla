@@ -29,24 +29,37 @@ typedef enum {
     TRUE  = 1,
 } Bool;
 
-#define EXIT()                                                       \
-    {                                                                \
-        fflush(stdout);                                              \
-        fprintf(stderr, "%s:%s:%d\n", __FILE__, __func__, __LINE__); \
-        _exit(ERROR);                                                \
-    }
-
-#define EXIT_WITH(x)                                                         \
-    {                                                                        \
-        fflush(stdout);                                                      \
-        fprintf(stderr, "%s:%s:%d `%s`\n", __FILE__, __func__, __LINE__, x); \
-        _exit(ERROR);                                                        \
-    }
-
-#define EXIT_IF(condition)     \
-    if (condition) {           \
-        EXIT_WITH(#condition); \
-    }
+#if 1
+    #define EXIT()                                                       \
+        {                                                                \
+            fflush(stdout);                                              \
+            fprintf(stderr, "%s:%s:%d\n", __FILE__, __func__, __LINE__); \
+            _exit(ERROR);                                                \
+        }
+    #define EXIT_WITH(x)               \
+        {                              \
+            fflush(stdout);            \
+            fprintf(stderr,            \
+                    "%s:%s:%d `%s`\n", \
+                    __FILE__,          \
+                    __func__,          \
+                    __LINE__,          \
+                    x);                \
+            _exit(ERROR);              \
+        }
+    #define EXIT_IF(condition)     \
+        if (condition) {           \
+            EXIT_WITH(#condition); \
+        }
+#else
+    #define EXIT() \
+        {}
+    #define EXIT_WITH(_) \
+        {}
+    #define EXIT_IF(condition) \
+        if (condition) {       \
+        }
+#endif
 
 #define STATIC_ASSERT(condition) _Static_assert(condition, "!(" #condition ")")
 
