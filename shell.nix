@@ -2,10 +2,7 @@ with import <nixpkgs> {};
 mkShell.override { stdenv = llvmPackages_14.stdenv; } {
     buildInputs = [
         ghc
-        glibcLocales
-        gmp
         hlint
-        libffi
         llvmPackages_14.lld
         mold
         ormolu
