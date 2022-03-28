@@ -42,6 +42,11 @@ set -euo pipefail
         -D_GNU_SOURCE
         "-ferror-limit=1"
         "-fsanitize=address"
+        "-fsanitize=bounds"
+        "-fsanitize=float-divide-by-zero"
+        "-fsanitize=implicit-conversion"
+        "-fsanitize=integer"
+        "-fsanitize=nullability"
         "-fsanitize=undefined"
         -fshort-enums
         "-march=native"
