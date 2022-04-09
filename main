@@ -61,7 +61,7 @@ set -euo pipefail
         -Wno-padded
         -Wno-reserved-macro-identifier
     )
-    mold -run clang "${flags[@]}"  -o "$WD/bin/vm" "$WD/src/vm/main.c"
+    mold -run clang "${flags[@]}" -o "$WD/bin/vm" "$WD/src/vm/main.c"
 )
 (
     python3 "$WD/src/test/main.py"
