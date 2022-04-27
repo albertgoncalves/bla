@@ -17,9 +17,10 @@ typedef struct stat     FileStat;
 #define U64_MAX 0xFFFFFFFFFFFFFFFF
 #define U32_MAX 0xFFFFFFFF
 
-#define SECOND_TO_MICRO 1000000
-#define MILLI_TO_MICRO  1000
-#define MICRO_TO_NANO   1000
+#define NANO_PER_SECOND  1000000000llu
+#define NANO_PER_MILLI   1000000llu
+#define MICRO_PER_SECOND 1000000llu
+#define NANO_PER_MICRO   (NANO_PER_SECOND / MICRO_PER_SECOND)
 
 #define OK    0
 #define ERROR 1
@@ -63,10 +64,10 @@ typedef enum {
 
 #define STATIC_ASSERT(condition) _Static_assert(condition, "!(" #condition ")")
 
-static u64 get_monotonic(Time* time) {
-    EXIT_IF(clock_gettime(CLOCK_MONOTONIC, time));
-    return (((u64)time->tv_sec) * SECOND_TO_MICRO) +
-           (((u64)time->tv_nsec) / MICRO_TO_NANO);
+static u64 get_monotonic(void) {
+    Time time;
+    EXIT_IF(clock_gettime(CLOCK_MONOTONIC, &time));
+    return (((u64)time.tv_sec) * NANO_PER_SECOND) + ((u64)time.tv_nsec);
 }
 
 #endif

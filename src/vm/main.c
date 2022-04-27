@@ -307,10 +307,10 @@ static Bool inst_spawn(Memory* memory, Thread* thread_parent) {
     return TRUE;
 }
 
-static Bool inst_slpms(Memory* memory, Thread* thread, Time* time) {
+static Bool inst_slpms(Memory* memory, Thread* thread) {
     EXIT_IF(thread->stack.top == 0);
     u32 milliseconds = thread->stack.nodes[--thread->stack.top].as_u32;
-    thread->wake_at  = get_monotonic(time) + (milliseconds * MILLI_TO_MICRO);
+    thread->wake_at  = get_monotonic() + (milliseconds * NANO_PER_MILLI);
     thread->sleeping = TRUE;
     ++memory->threads_sleeping;
     return FALSE;
@@ -333,7 +333,7 @@ __attribute__((noreturn)) static void inst_exit(Thread* thread) {
     _exit(thread->stack.nodes[--thread->stack.top].as_i32);
 }
 
-static Bool step(Memory* memory, Thread* thread, Time* time) {
+static Bool step(Memory* memory, Thread* thread) {
     EXIT_IF(memory->program.insts_len <= thread->insts_index);
     switch ((Inst)memory->program.insts[thread->insts_index++]) {
     case INST_HALT: {
@@ -412,7 +412,7 @@ static Bool step(Memory* memory, Thread* thread, Time* time) {
         return inst_spawn(memory, thread);
     }
     case INST_SLPMS: {
-        return inst_slpms(memory, thread, time);
+        return inst_slpms(memory, thread);
     }
     case INST_PRCH: {
         return inst_prch(thread);
@@ -439,7 +439,6 @@ i32 main(i32 n, const char** args) {
     Memory* memory      = alloc_memory();
     Thread* thread_main = alloc_thread(memory, 0);
     memory->program     = read_program(args[1]);
-    Time time;
     while (0 < memory->threads_alive) {
         if (memory->threads_sleeping == memory->threads_alive) {
             u64 next_wake_at = U64_MAX;
@@ -456,11 +455,11 @@ i32 main(i32 n, const char** args) {
                 }
             }
             EXIT_IF(next_wake_at == U64_MAX);
-            u64 now = get_monotonic(&time);
+            u64 now = get_monotonic();
             if (now < next_wake_at) {
                 u64 microseconds = next_wake_at - now;
                 EXIT_IF(U32_MAX < microseconds);
-                EXIT_IF(usleep((u32)microseconds));
+                EXIT_IF(usleep((u32)(microseconds / NANO_PER_MICRO)));
             }
         }
         for (u32 i = 0; i < CAP_THREADS; ++i) {
@@ -469,7 +468,7 @@ i32 main(i32 n, const char** args) {
                 continue;
             }
             if (thread->sleeping) {
-                if (get_monotonic(&time) < thread->wake_at) {
+                if (get_monotonic() < thread->wake_at) {
                     continue;
                 }
                 thread->sleeping = FALSE;
@@ -478,7 +477,7 @@ i32 main(i32 n, const char** args) {
             for (u32 _ = 0; _ < THREAD_STEPS; ++_) {
                 // NOTE: If `step(...)` returns `FALSE` we should switch to
                 // another thread.
-                if (!step(memory, thread, &time)) {
+                if (!step(memory, thread)) {
                     break;
                 }
             }
