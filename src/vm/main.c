@@ -90,7 +90,7 @@ typedef struct {
     Program program;
 } Memory;
 
-static Memory* alloc_memory() {
+static Memory* alloc_memory(void) {
     void* address = mmap(NULL,
                          sizeof(Memory),
                          PROT_READ | PROT_WRITE,
