@@ -63,6 +63,3 @@ set -euo pipefail
     )
     mold -run clang "${flags[@]}" -o "$WD/bin/vm" "$WD/src/vm/main.c"
 )
-(
-    python3 "$WD/src/test/main.py"
-)
