@@ -11,7 +11,8 @@ Quick start
 ```console
 $ cd path/to/bla
 $ nix-shell
-[nix-shell:path/to/bla]$ ./main                             # build compiler and vm, run tests
+[nix-shell:path/to/bla]$ ./scripts/build.sh                 # build compiler and vm
+[nix-shell:path/to/bla]$ ./scripts/test.py                  # run tests
 [nix-shell:path/to/bla]$ cat > script.bla << EOF            # create example script
 > main() {
 >     n = 40;
