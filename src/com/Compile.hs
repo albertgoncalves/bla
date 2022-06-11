@@ -223,6 +223,8 @@ compileStmt context0 (AstStmtIf _ condition body) =
             `setStackOffset` getContextStackOffset context0
         )
         body
+-- NOTE: This is an *early* return! We're not yet jumping back to the calling
+-- scope, but rather jumping to the end of this function block.
 compileStmt context (AstStmtRet _ (Just expr)) =
   decrStackOffset $
     appendContextInsts
