@@ -6,7 +6,7 @@ set -euo pipefail
     for x in "$WD/src/com"/*.hs; do
         (
             hlint "$x"
-            ormolu -m inplace "$x"
+            ormolu -i --no-cabal "$x"
         ) &
     done
     clang-format -i -verbose "$WD/src/vm/"* &

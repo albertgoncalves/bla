@@ -314,16 +314,16 @@ compileFunc compiler0 (AstFunc name args locals body returnExpr) =
   appendCompilerInsts (getContextCompiler context2) $
     case returnExpr of
       Just _ ->
-        PreInstLabelSet returnLabel :
-        let n = length args + length locals - 1
-         in if n == 0
-              then [InstStore n, InstSwap, InstJump]
-              else
-                [ InstStore n,
-                  InstDrop n,
-                  InstSwap,
-                  InstJump
-                ]
+        PreInstLabelSet returnLabel
+          : let n = length args + length locals - 1
+             in if n == 0
+                  then [InstStore n, InstSwap, InstJump]
+                  else
+                    [ InstStore n,
+                      InstDrop n,
+                      InstSwap,
+                      InstJump
+                    ]
       Nothing ->
         let n = length args + length locals
          in [PreInstLabelSet returnLabel, InstDrop n, InstJump]
@@ -335,9 +335,9 @@ compileFunc compiler0 (AstFunc name args locals body returnExpr) =
         compileStmt
         ( context0 $
             appendCompilerInsts compiler0 $
-              PreInstLabelSet name :
-              let n = length locals
-               in [InstRsrv n | n /= 0]
+              PreInstLabelSet name
+                : let n = length locals
+                   in [InstRsrv n | n /= 0]
         )
         body
     context2 =

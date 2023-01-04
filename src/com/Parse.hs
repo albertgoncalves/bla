@@ -140,9 +140,9 @@ token cs'@('@' : cs) =
    in Right (TokenIntrin (length cs') ('@' : as), bs)
 token cs'@(c : cs)
   | isDigit c =
-    let (as, bs) = span isDigit cs in Right (TokenInt p (read $ c : as), bs)
+      let (as, bs) = span isDigit cs in Right (TokenInt p (read $ c : as), bs)
   | isLower c =
-    let (as, bs) = span isIdent cs in Right (TokenIdent p (c : as), bs)
+      let (as, bs) = span isIdent cs in Right (TokenIdent p (c : as), bs)
   | isSpace c = maybeKeyword $ dropWhile isSpace cs
   | otherwise = Left p
   where
